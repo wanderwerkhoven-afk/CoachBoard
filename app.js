@@ -1050,12 +1050,14 @@ function renderHome(){
             </svg>
             Opstelling
           </button>`:''}
-          <button class="match-refined-open ${s.key==='prepare'?'needs-prep':''}" data-home-open-sheet="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>
         </div>
       </div>
       <div class="match-compact-bottom">
-        <button class="match-inline-status ${s.key}" data-home-status-open="${m.id}">${s.label}</button>
-        ${compactBulletsHtml(m)}
+        <div class="match-bottom-left">
+          <button class="match-inline-status ${s.key}" data-home-status-open="${m.id}">${s.label}</button>
+          ${compactBulletsHtml(m)}
+        </div>
+        <button class="match-refined-open ${s.key==='prepare'?'needs-prep':''}" data-home-open-sheet="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>
       </div>
     </div>`;
   };
@@ -1655,14 +1657,15 @@ function renderMatches(){
         </div>
         <div class="match-compact-actions">
           ${matchResultDisplay(m)?`<span class="match-head-score" title="Uitslag">${esc(matchResultDisplay(m))}</span>`:''}
-          ${s.key==='final'
-            ?`<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`
-            :`<button class="match-refined-open ${s.key==='prepare'?'needs-prep':''}" data-open="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>`}
+          ${s.key==='final'?`<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`:''}
         </div>
       </div>
       <div class="match-compact-bottom">
-        <button class="match-inline-status ${s.key}" data-status-open="${m.id}">${s.label}</button>
-        ${compactBulletsHtml(m)}
+        <div class="match-bottom-left">
+          <button class="match-inline-status ${s.key}" data-status-open="${m.id}">${s.label}</button>
+          ${compactBulletsHtml(m)}
+        </div>
+        ${s.key!=='final'?`<button class="match-refined-open ${s.key==='prepare'?'needs-prep':''}" data-open="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>`:''}
       </div>
     </div>`;
   }).join('');
