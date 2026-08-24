@@ -18,8 +18,68 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
-<div class="app">
+
+<!-- Auth Screen -->
+<div id="authScreen" class="auth-screen">
+	<div class="login-wrap">
+		<div class="login-html">
+			<input id="tab-1" type="radio" name="tab" class="sign-in" checked><label for="tab-1" class="tab">Sign In</label>
+			<input id="tab-2" type="radio" name="tab" class="sign-up"><label for="tab-2" class="tab">Sign Up</label>
+			<div class="login-form">
+				<form id="signInForm" class="sign-in-htm" onsubmit="return false;">
+					<div class="group">
+						<label for="loginUser" class="label">Gebruikersnaam / E-mail</label>
+						<input id="loginUser" type="text" class="input" required autocomplete="username">
+					</div>
+					<div class="group">
+						<label for="loginPass" class="label">Wachtwoord</label>
+						<input id="loginPass" type="password" class="input" data-type="password" required autocomplete="current-password">
+					</div>
+					<div class="group">
+						<input id="check" type="checkbox" class="check" checked>
+						<label for="check"><span class="icon"></span> Ingelogd blijven</label>
+					</div>
+					<div class="group">
+						<input type="submit" id="btnSignIn" class="button" value="Inloggen">
+					</div>
+					<div class="hr"></div>
+					<div class="foot-lnk">
+						<a href="#forgot" id="forgotPassLink">Wachtwoord vergeten?</a>
+					</div>
+				</form>
+				<form id="signUpForm" class="sign-up-htm" onsubmit="return false;">
+					<div class="group">
+						<label for="signupUser" class="label">Gebruikersnaam</label>
+						<input id="signupUser" type="text" class="input" required autocomplete="username">
+					</div>
+					<div class="group">
+						<label for="signupPass" class="label">Wachtwoord</label>
+						<input id="signupPass" type="password" class="input" data-type="password" required autocomplete="new-password">
+					</div>
+					<div class="group">
+						<label for="signupPassRepeat" class="label">Herhaal Wachtwoord</label>
+						<input id="signupPassRepeat" type="password" class="input" data-type="password" required autocomplete="new-password">
+					</div>
+					<div class="group">
+						<label for="signupEmail" class="label">E-mailadres</label>
+						<input id="signupEmail" type="email" class="input" required autocomplete="email">
+					</div>
+					<div class="group">
+						<input type="submit" id="btnSignUp" class="button" value="Account Aanmaken">
+					</div>
+					<div class="hr"></div>
+					<div class="foot-lnk">
+						<label for="tab-1" style="cursor:pointer">Al een account? Inloggen</label>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="app" id="mainApp">
 <header>
+
   <div>
     <div class="club-head-row">
       <button type="button" class="club-logo-button" id="clubLogoButton" title="Clublogo toevoegen of wijzigen" aria-label="Clublogo toevoegen of wijzigen">
@@ -43,9 +103,14 @@
         <button class="btn ghost" id="cancelTeamEdit">Annuleren</button>
       </div>
     </div>
+  <div class="header-right-tools">
+    <div class="header-coachboard">CoachBoard</div>
+    <button type="button" id="btnLogout" class="header-logout-btn" title="Uitloggen" aria-label="Uitloggen">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+    </button>
   </div>
-  <div class="header-coachboard">CoachBoard</div>
 </header>
+
 
 <nav class="tabs">
   <button class="on" data-screen="home">Home</button>
