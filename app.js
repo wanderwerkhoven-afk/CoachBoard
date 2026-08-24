@@ -1888,8 +1888,10 @@ function renderAvailability(){
       b.title=label;
       b.setAttribute('aria-label',label+(isSelected?' geselecteerd':''));
       b.textContent=isSelected?'✓':'';
-      b.addEventListener('click',()=>{
-        m.availability[p.id]=m.availability[p.id]===key?null:key;
+      b.addEventListener('click',(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        m.availability[p.id]=key;
         saveState();
         renderMatchDetail();
       });
@@ -4113,7 +4115,9 @@ document.getElementById('playerEditModal')?.addEventListener('click',e=>{
 });
 
 document.querySelectorAll('[data-pref-status]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
+  btn.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
     setPreferredAvailabilityStatus(btn.dataset.prefStatus);
   });
 });
