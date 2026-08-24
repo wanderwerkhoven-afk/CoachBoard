@@ -62,17 +62,24 @@ export function showToast(message, type = "info", duration = 3500) {
 }
 window.showToast = showToast;
 
-// ─── Update UI (Header Login / Profiel) ───────────────────────
+// ─── Update UI (Dropdown & Status Dot) ───────────────────────
 function updateAuthUI(user) {
-  const loginBtn = document.getElementById("googleLoginBtn");
-  const profileWidget = document.getElementById("userProfileWidget");
+  const loggedOutView = document.getElementById("authLoggedOutView");
+  const loggedInView = document.getElementById("authLoggedInView");
+  const cloudStatusDot = document.getElementById("cloudStatusDot");
   const userAvatar = document.getElementById("userAvatar");
   const userName = document.getElementById("userName");
+  const userEmail = document.getElementById("userEmail");
 
   if (user) {
-    if (loginBtn) loginBtn.style.display = "none";
-    if (profileWidget) profileWidget.style.display = "flex";
+    if (loggedOutView) loggedOutView.style.display = "none";
+    if (loggedInView) loggedInView.style.display = "flex";
+    if (cloudStatusDot) {
+      cloudStatusDot.className = "cloud-status-dot online";
+      cloudStatusDot.title = "Status: Online (Firestore Cloud Sync)";
+    }
     if (userName) userName.textContent = user.displayName || user.email.split("@")[0];
+    if (userEmail) userEmail.textContent = user.email || "";
     if (userAvatar) {
       if (user.photoURL) {
         userAvatar.src = user.photoURL;
@@ -82,9 +89,30 @@ function updateAuthUI(user) {
       }
     }
   } else {
-    if (loginBtn) loginBtn.style.display = "inline-flex";
-    if (profileWidget) profileWidget.style.display = "none";
+    if (loggedOutView) loggedOutView.style.display = "flex";
+    if (loggedInView) loggedInView.style.display = "none";
+    if (cloudStatusDot) {
+      cloudStatusDot.className = "cloud-status-dot offline";
+      cloudStatusDot.title = "Status: Lokaal opgeslagen";
+    }
   }
+}
+
+// ─── Dropdown Toggle & Sluiten ───────────────────────────────
+function toggleSettingsDropdown() {
+  const dropdown = document.getElementById("settingsDropdown");
+  const gearBtn = document.getElementById("settingsGearBtn");
+  if (!dropdown) return;
+  const isVisible = dropdown.style.display !== "none";
+  dropdown.style.display = isVisible ? "none" : "block";
+  gearBtn?.classList.toggle("active", !isVisible);
+}
+
+function closeSettingsDropdown() {
+  const dropdown = document.getElementById("settingsDropdown");
+  const gearBtn = document.getElementById("settingsGearBtn");
+  if (dropdown) dropdown.style.display = "none";
+  gearBtn?.classList.remove("active");
 }
 
 // ─── Initialiseer Gebruikersdata & Firestore Sync ────────────
@@ -104,9 +132,9 @@ async function initUserFirestoreData(user) {
         window.setCoachBoardState(cloudState);
       }
       isApplyingCloudUpdate = false;
-      showToast("Data gesynchroniseerd vanuit Firestore!", "success");
+      showToast("Data gesynchroniseerd vanuit Firestore! ☁️", "success");
     } else {
-      // 2. Eerste keer inloggen: zet huidige localStorage data direct over naar Firestore
+      // 2. Eerste keer inloggen: zet huidige localStorage data over naar Firestore
       const localState = (typeof window.getCoachBoardState === "function") 
         ? window.getCoachBoardState() 
         : null;
@@ -165,6 +193,26 @@ window.syncStateToCloud = function(state) {
   }, 400); // 400ms debounce
 };
 
+// ─── Handmatige Sync Knop ────────────────────────────────────
+async function handleManualSync() {
+  if (!currentUser) return;
+  const localState = typeof window.getCoachBoardState === "function" ? window.getCoachBoardState() : null;
+  if (!localState) return;
+
+  try {
+    const userDocRef = doc(db, "users", currentUser.uid);
+    await setDoc(userDocRef, {
+      email: currentUser.email,
+      displayName: currentUser.displayName || "",
+      updatedAt: new Date().toISOString(),
+      coachboardState: localState
+    }, { merge: true });
+    showToast("Data succesvol gesynchroniseerd met Firestore! ☁️", "success");
+  } catch (err) {
+    showToast("Synchronisatie mislukt: " + err.message, "error");
+  }
+}
+
 // ─── Auth State Listener ─────────────────────────────────────
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -185,6 +233,7 @@ async function handleGoogleSignIn() {
     const result = await signInWithPopup(auth, googleProvider);
     const name = result.user.displayName || result.user.email;
     showToast(`Welkom, ${name}!`, "success");
+    closeSettingsDropdown();
   } catch (err) {
     if (err.code === "auth/popup-closed-by-user") return;
     if (err.code === "auth/unauthorized-domain") {
@@ -200,6 +249,7 @@ async function handleLogout() {
   try {
     await signOut(auth);
     showToast("Uitgelogd", "info");
+    closeSettingsDropdown();
   } catch (err) {
     showToast("Uitloggen mislukt", "error");
   }
@@ -207,6 +257,34 @@ async function handleLogout() {
 
 // ─── Event listeners koppelen ─────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("googleLoginBtn")?.addEventListener("click", handleGoogleSignIn);
-  document.getElementById("logoutBtn")?.addEventListener("click", handleLogout);
+  const gearBtn = document.getElementById("settingsGearBtn");
+  const closeBtn = document.getElementById("closeSettingsDropdown");
+  const loginBtn = document.getElementById("googleLoginBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const manualSyncBtn = document.getElementById("manualSyncBtn");
+
+  gearBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleSettingsDropdown();
+  });
+
+  closeBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeSettingsDropdown();
+  });
+
+  loginBtn?.addEventListener("click", handleGoogleSignIn);
+  logoutBtn?.addEventListener("click", handleLogout);
+  manualSyncBtn?.addEventListener("click", handleManualSync);
+
+  // Sluit dropdown bij klikken buiten de popup
+  document.addEventListener("click", (e) => {
+    const dropdown = document.getElementById("settingsDropdown");
+    const gear = document.getElementById("settingsGearBtn");
+    if (dropdown && dropdown.style.display !== "none") {
+      if (!dropdown.contains(e.target) && !gear?.contains(e.target)) {
+        closeSettingsDropdown();
+      }
+    }
+  });
 });
