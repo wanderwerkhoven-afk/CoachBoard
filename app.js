@@ -346,18 +346,18 @@ function renderHeader(){
     logoBtn.classList.remove('has-logo');
   }
 }
-document.getElementById('saveTeam').addEventListener('click',()=>{
+document.getElementById('saveTeam')?.addEventListener('click',()=>{
   state.teamName=document.getElementById('teamNameInput').value.trim()||'Mijn Team';
   saveState();
   renderHeader();
   document.getElementById('teamEditPanel').classList.remove('on');
   showToast('Teamnaam opgeslagen', 'success');
 });
-document.getElementById('editTeamNameBtn').addEventListener('click',()=>{
+document.getElementById('editTeamNameBtn')?.addEventListener('click',()=>{
   document.getElementById('teamNameInput').value=state.teamName||'';
   document.getElementById('teamEditPanel').classList.toggle('on');
 });
-document.getElementById('cancelTeamEdit').addEventListener('click',()=>{
+document.getElementById('cancelTeamEdit')?.addEventListener('click',()=>{
   document.getElementById('teamEditPanel').classList.remove('on');
 });
 
@@ -1491,7 +1491,7 @@ document.getElementById('toggleMatchAdd')?.addEventListener('click',()=>{
   }
 });
 
-document.getElementById('addMatch').addEventListener('click',()=>{
+document.getElementById('addMatch')?.addEventListener('click',()=>{
   const opponent=document.getElementById('matchOpponent').value.trim();
   const date=document.getElementById('matchDate').value;
   const time=document.getElementById('matchTime').value;
@@ -1558,9 +1558,9 @@ function confirmDeleteMatch(){
   showToast(`Wedstrijd tegen ${matchName} verwijderd`, 'info');
 }
 
-document.getElementById('cancelDeleteMatch').addEventListener('click',closeDeleteMatchModal);
-document.getElementById('confirmDeleteMatch').addEventListener('click',confirmDeleteMatch);
-document.getElementById('deleteModal').addEventListener('click',e=>{
+document.getElementById('cancelDeleteMatch')?.addEventListener('click',closeDeleteMatchModal);
+document.getElementById('confirmDeleteMatch')?.addEventListener('click',confirmDeleteMatch);
+document.getElementById('deleteModal')?.addEventListener('click',e=>{
   if(e.target.id==='deleteModal')closeDeleteMatchModal();
 });
 
@@ -1753,7 +1753,7 @@ if(!m)return;
   saveState();
   show('matchDetail');renderMatchDetail();
 }
-document.getElementById('backToMatches').addEventListener('click',()=>show('matches'));
+document.getElementById('backToMatches')?.addEventListener('click',()=>show('matches'));
 
 function renderMatchDetail(){
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
@@ -2009,7 +2009,7 @@ document.getElementById('clearAvailability')?.addEventListener('click',()=>{
   saveState();
   renderMatchDetail();
 });
-document.getElementById('proposalMode').addEventListener('change',updateModeHelp);
+document.getElementById('proposalMode')?.addEventListener('change',updateModeHelp);
 function updateModeHelp(){
   const v=document.getElementById('proposalMode').value;
   document.getElementById('modeHelp').textContent=
@@ -2018,8 +2018,8 @@ function updateModeHelp(){
       :'Eerlijk wisselbeleid: speelminuten uit wedstrijden waarin de speler beschikbaar was bepalen de prioriteit. Afwezigheid telt niet mee. Niveau 3 staat standaard op halve wedstrijd en speelt maximaal 35 minuten.';
 }
 
-document.getElementById('generateLineups').addEventListener('click',generateLineups);
-document.getElementById('formation').addEventListener('change',()=>{const m=state.matches.find(x=>x.id===activeMatchId);m.formation=document.getElementById('formation').value;saveState();drawLineups()});
+document.getElementById('generateLineups')?.addEventListener('click',generateLineups);
+document.getElementById('formation')?.addEventListener('change',()=>{const m=state.matches.find(x=>x.id===activeMatchId);m.formation=document.getElementById('formation').value;saveState();drawLineups()});
 
 
 function fairPolicyMinutes(playerId){
@@ -3060,10 +3060,10 @@ function renderBench(){
   makeBench('bench2',bench2,2);
 }
 
-document.getElementById('closeSwap').addEventListener('click',closeSwapChooser);
-document.getElementById('swapModal').addEventListener('click',e=>{if(e.target.id==='swapModal')closeSwapChooser();});
-document.getElementById('restore1').addEventListener('click',()=>restoreGenerated(1));
-document.getElementById('restore2').addEventListener('click',()=>restoreGenerated(2));
+document.getElementById('closeSwap')?.addEventListener('click',closeSwapChooser);
+document.getElementById('swapModal')?.addEventListener('click',e=>{if(e.target.id==='swapModal')closeSwapChooser();});
+document.getElementById('restore1')?.addEventListener('click',()=>restoreGenerated(1));
+document.getElementById('restore2')?.addEventListener('click',()=>restoreGenerated(2));
 
 
 function renderFinalLineupSummary(){
@@ -3099,9 +3099,9 @@ function openFinishPanel(){
   renderFinalLineupSummary();
 }
 
-document.getElementById('openFinishPanel').addEventListener('click',openFinishPanel);
+document.getElementById('openFinishPanel')?.addEventListener('click',openFinishPanel);
 
-document.getElementById('finishMatch').addEventListener('click',()=>{
+document.getElementById('finishMatch')?.addEventListener('click',()=>{
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
   if(m.completed){alert('Deze wedstrijd is al verwerkt in de statistieken.');return}
 
