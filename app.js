@@ -1351,7 +1351,7 @@ function renderPlayers(){
     </div>`;
 
   box.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openPlayerEditor(b.dataset.edit)));
-  box.querySelectorAll('[data-player-open]').forEach(b=>b.addEventListener('click',()=>openPlayerStats(b.dataset.playerOpen)));
+  box.querySelectorAll('[data-player-open]').forEach(b=>b.addEventListener('click',()=>showPlayerStats(b.dataset.playerOpen)));
 }
 
 
