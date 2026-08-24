@@ -8,6 +8,37 @@ const XY442={1:[50,82],2:[82,58],3:[61,62],4:[39,62],5:[18,58],6:[39,42],7:[78,4
 const STATUS={fit:['g','Aanwezig en fit'],limited:['o','Halve wedstrijd'],noPlay:['r','Aanwezig, niet spelend'],absent:['k','Afwezig']};
 const KEY='coachboard_v1_state';
 
+// Action message toast system
+function showToast(message, type='success', duration=3000){
+  let container = document.getElementById('toastContainer');
+  if(!container){
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    document.body.appendChild(container);
+  }
+
+  const icons = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'ℹ'
+  };
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || '✓'}</span>
+    <span class="toast-text">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(()=>{
+    toast.classList.add('toast-out');
+    setTimeout(()=>toast.remove(), 260);
+  }, duration);
+}
+
 
 let state=loadState();
 
@@ -303,7 +334,9 @@ function renderHeader(){
 document.getElementById('saveTeam').addEventListener('click',()=>{
   state.teamName=document.getElementById('teamNameInput').value.trim()||'Mijn Team';
   saveState();
+  renderHeader();
   document.getElementById('teamEditPanel').classList.remove('on');
+  showToast('Teamnaam opgeslagen', 'success');
 });
 document.getElementById('editTeamNameBtn').addEventListener('click',()=>{
   document.getElementById('teamNameInput').value=state.teamName||'';
@@ -319,18 +352,19 @@ document.getElementById('removeClubLogo')?.addEventListener('click',()=>{
   state.clubLogo='';
   saveState();
   renderHeader();
+  showToast('Clublogo verwijderd', 'info');
 });
 document.getElementById('clubLogoInput')?.addEventListener('change',e=>{
   const file=e.target.files?.[0];
   if(!file)return;
   const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
   if(!allowed.includes(file.type)){
-    alert('Gebruik een PNG, JPG, WEBP of SVG-bestand.');
+    showToast('Gebruik een PNG, JPG, WEBP of SVG-bestand', 'warning');
     e.target.value='';
     return;
   }
   if(file.size>2.5*1024*1024){
-    alert('Kies bij voorkeur een logo kleiner dan 2,5 MB.');
+    showToast('Kies bij voorkeur een logo kleiner dan 2,5 MB', 'warning');
     e.target.value='';
     return;
   }
@@ -340,6 +374,7 @@ document.getElementById('clubLogoInput')?.addEventListener('change',e=>{
     saveState();
     renderHeader();
     e.target.value='';
+    showToast('Clublogo bijgewerkt', 'success');
   };
   reader.readAsDataURL(file);
 });
@@ -465,16 +500,20 @@ function closeEditMatch(){editingMatchId=null;editMatchModal.classList.remove('o
 function saveEditedMatch(){
  const m=state.matches.find(x=>x.id===editingMatchId); if(!m)return;
  const result=editResult.value.trim();
- if(!editOpponent.value.trim()||!editDate.value||!editTime.value){alert('Vul tegenstander, datum en aanvangstijd in.');return}
- if(result&&!/^\d+\s*[-–:]\s*\d+$/.test(result)){alert('Gebruik voor de uitslag bijvoorbeeld 3-1.');return}
+ if(!editOpponent.value.trim()||!editDate.value||!editTime.value){
+   showToast('Vul tegenstander, datum en aanvangstijd in', 'warning');
+   return;
+ }
+ if(result&&!/^\d+\s*[-–:]\s*\d+$/.test(result)){
+   showToast('Gebruik voor de uitslag bijvoorbeeld 3-1', 'warning');
+   return;
+ }
  m.opponent=editOpponent.value.trim();m.date=editDate.value;m.time=editTime.value;m.homeAway=editHomeAway.value;m.result=result;
  localStorage.setItem(KEY,JSON.stringify(state));
  closeEditMatch();
-
-
-
-renderAll();
-bindHomeMatchTabs();if(activeMatchId===m.id)renderMatchDetail();
+ renderAll();
+ bindHomeMatchTabs();if(activeMatchId===m.id)renderMatchDetail();
+ showToast('Wedstrijdgegevens opgeslagen', 'success');
 }
 cancelEditMatch.addEventListener('click',closeEditMatch);saveEditMatch.addEventListener('click',saveEditedMatch);
 editMatchModal.addEventListener('click',e=>{if(e.target===editMatchModal)closeEditMatch()});
@@ -955,6 +994,7 @@ function confirmFinishResult(){
   saveState();
   closeFinishResultModal();
   renderAll();
+  showToast(finishSpecialStatus ? `Wedstrijdstatus ingesteld op ${finishSpecialStatus}` : `Wedstrijd afgerond (${m.result}) en opgeslagen in statistieken`, 'success');
 }
 
 function renderHome(){
@@ -1223,6 +1263,7 @@ function editPlayer(id){openPlayerEdit(id);}
 function deletePlayer(id){
   const p=state.players.find(x=>x.id===id);
   if(!p)return false;
+  const playerName=p.name;
 
   state.players=state.players.filter(x=>x.id!==id);
 
@@ -1249,6 +1290,7 @@ function deletePlayer(id){
 
   localStorage.setItem(KEY,JSON.stringify(state));
   renderAll();
+  showToast(`Speler ${playerName} verwijderd`, 'info');
   return true;
 }
 
@@ -1399,7 +1441,10 @@ document.getElementById('addMatch').addEventListener('click',()=>{
   const opponent=document.getElementById('matchOpponent').value.trim();
   const date=document.getElementById('matchDate').value;
   const time=document.getElementById('matchTime').value;
-  if(!opponent||!date||!time){alert('Vul tegenstander, datum en tijd in.');return}
+  if(!opponent||!date||!time){
+    showToast('Vul tegenstander, datum en tijd in', 'warning');
+    return;
+  }
 
   const availability={};
   state.players.forEach(p=>availability[p.id]=playerAbsentOnDate(p,date)?'absent':(p.level===3?'limited':(p.preferredAvailability||'fit')));
@@ -1417,6 +1462,8 @@ document.getElementById('addMatch').addEventListener('click',()=>{
   document.getElementById('matchType').value='Competitie';
   saveState();
   document.getElementById('matchAddCard')?.classList.add('collapsed');
+  renderAll();
+  showToast(`Wedstrijd tegen ${opponent} toegevoegd`, 'success');
 });
 let pendingDeleteMatchId=null;
 
@@ -1441,6 +1488,8 @@ function closeDeleteMatchModal(){
 function confirmDeleteMatch(){
   if(!pendingDeleteMatchId)return;
   const id=pendingDeleteMatchId;
+  const match=state.matches.find(m=>m.id===id);
+  const matchName=match?match.opponent:'Wedstrijd';
 
   state.matches=state.matches.filter(m=>m.id!==id);
   localStorage.setItem(KEY,JSON.stringify(state));
@@ -1452,6 +1501,7 @@ function confirmDeleteMatch(){
 
   closeDeleteMatchModal();
   renderAll();
+  showToast(`Wedstrijd tegen ${matchName} verwijderd`, 'info');
 }
 
 document.getElementById('cancelDeleteMatch').addEventListener('click',closeDeleteMatchModal);
@@ -2201,6 +2251,7 @@ function generateLineups(){
   m.generatedLineup2=JSON.parse(JSON.stringify(m.lineup2));
 
   saveState();renderMatchDetail();
+  showToast('Opstellingen voor beide helften gegenereerd', 'success');
 
   const h1=lineupPlayers(m.lineup1);
   const h2=lineupPlayers(m.lineup2);
@@ -4114,8 +4165,14 @@ document.getElementById('cancelPlayerEdit')?.addEventListener('click',closePlaye
 document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
   const id=document.getElementById('editPlayerId').value;
   const name=document.getElementById('editPlayerName').value.trim();
-  if(!name){alert('Vul een naam in.');return}
-  if(!editPlayerSelectedPositions.length){alert('Selecteer minimaal één positie.');return}
+  if(!name){
+    showToast('Vul een naam in', 'warning');
+    return;
+  }
+  if(!editPlayerSelectedPositions.length){
+    showToast('Selecteer minimaal één positie', 'warning');
+    return;
+  }
 
   const level=+document.getElementById('editPlayerLevel').value;
   const preferredAvailability=document.getElementById('editPlayerPreferredAvailability').value||'fit';
@@ -4131,6 +4188,7 @@ document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
     p.absenceDates=[...editPlayerAbsenceDates].sort();
 
     syncPlayerAbsenceToUnpreparedMatches(p,oldDates);
+    showToast(`Speler ${name} bijgewerkt`, 'success');
   }else{
     const p={
       id:uid('p'),
@@ -4143,6 +4201,7 @@ document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
     };
     state.players.push(p);
     syncPlayerAbsenceToUnpreparedMatches(p,[]);
+    showToast(`Speler ${name} toegevoegd`, 'success');
   }
 
   saveState();

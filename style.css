@@ -2089,3 +2089,90 @@ header {
   line-height: 1.45;
   margin-top: 4px;
 }
+
+
+/* ==========================================================================
+   TOAST NOTIFICATIONS / ACTION MESSAGES
+   ========================================================================== */
+#toastContainer {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 99999;
+  pointer-events: none;
+  width: 90%;
+  max-width: 440px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: auto;
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast.toast-success {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.toast.toast-error {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.toast.toast-warning {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.toast.toast-info {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.toast-icon {
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toast-text {
+  flex: 1;
+  line-height: 1.35;
+}
+
+.toast.toast-out {
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
