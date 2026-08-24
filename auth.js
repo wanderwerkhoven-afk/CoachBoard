@@ -3,8 +3,10 @@
 // ============================================================
 import {
   auth,
+  googleProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail
@@ -34,7 +36,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// ─── Sign In ─────────────────────────────────────────────────
+// ─── Sign In (email/password) ─────────────────────────────────
 async function handleSignIn(e) {
   e?.preventDefault();
   const userInput = document.getElementById("loginUser");
@@ -52,8 +54,21 @@ async function handleSignIn(e) {
     await signInWithEmailAndPassword(auth, email, password);
     if (userInput) userInput.value = "";
     if (passInput) passInput.value = "";
-    window.showToast?.(`Welkom terug!`, "success");
+    window.showToast?.("Welkom terug!", "success");
   } catch (err) {
+    window.showToast?.(firebaseErrorMessage(err.code), "error");
+  }
+}
+
+// ─── Sign In with Google ──────────────────────────────────────
+async function handleGoogleSignIn(e) {
+  e?.preventDefault();
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const name = result.user.displayName || result.user.email;
+    window.showToast?.(`Welkom, ${name}!`, "success");
+  } catch (err) {
+    if (err.code === "auth/popup-closed-by-user") return; // gebruiker sloot popup, geen fout tonen
     window.showToast?.(firebaseErrorMessage(err.code), "error");
   }
 }
@@ -97,7 +112,6 @@ async function handleSignUp(e) {
 async function handleLogout() {
   try {
     await signOut(auth);
-    // Reset to sign-in tab
     const tab1 = document.getElementById("tab-1");
     if (tab1) tab1.checked = true;
     window.showToast?.("Succesvol uitgelogd.", "info");
@@ -144,6 +158,9 @@ function firebaseErrorMessage(code) {
       return "Te veel pogingen. Probeer het later opnieuw.";
     case "auth/network-request-failed":
       return "Geen internetverbinding. Controleer je netwerk.";
+    case "auth/cancelled-popup-request":
+    case "auth/popup-blocked":
+      return "Google popup geblokkeerd door de browser. Sta popups toe en probeer opnieuw.";
     default:
       return `Er is een fout opgetreden (${code}).`;
   }
@@ -165,6 +182,9 @@ document.querySelectorAll(".btn-toggle-pwd").forEach(btn => {
 // ─── Wire up event listeners ─────────────────────────────────
 document.getElementById("signInForm")?.addEventListener("submit", handleSignIn);
 document.getElementById("btnSignIn")?.addEventListener("click", handleSignIn);
+
+document.getElementById("btnGoogleSignIn")?.addEventListener("click", handleGoogleSignIn);
+document.getElementById("btnGoogleSignUp")?.addEventListener("click", handleGoogleSignIn);
 
 document.getElementById("signUpForm")?.addEventListener("submit", handleSignUp);
 document.getElementById("btnSignUp")?.addEventListener("click", handleSignUp);
