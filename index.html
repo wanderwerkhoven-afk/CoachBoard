@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="nl">
 <head>
@@ -7,15 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#c62828">
 <title>CoachBoard</title>
-<link rel="icon" href="coachboard-football-icon.svg" type="image/svg+xml">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="coachboard-football-icon-1024.png">
-<link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 </head>
 <body>
 <div class="app">
@@ -47,22 +41,18 @@
   <div class="header-coachboard">CoachBoard</div>
 </header>
 
-<nav class="tabs">
-  <button class="on" data-screen="home">Home</button>
-  <button data-screen="players">Spelers <span class="nav-count" id="navPlayersCount">0</span></button>
-  <button data-screen="matches">Wedstrijden <span class="nav-count" id="navMatchesCount">0</span></button>
-  <button data-screen="stats">Statistiek</button>
+<nav class="tabs icon-tabs">
+  <button class="on" data-screen="home" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 12 3.7l8.5 6.8v9a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5a1.5 1.5 0 0 1-1.5-1.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
+  <button data-screen="players" title="Spelers" aria-label="Spelers"><svg viewBox="0 0 24 24" aria-hidden="true">
+  <circle cx="12" cy="7" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <path d="M5.5 20v-3.2c0-2.7 2.9-4.6 6.5-4.6s6.5 1.9 6.5 4.6V20z"
+        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+</svg><span class="nav-count" id="navPlayersCount">0</span></button>
+  <button data-screen="matches" title="Wedstrijden" aria-label="Wedstrijden"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="16" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 4v16M2.5 8h3.4v8H2.5M21.5 8h-3.4v8h3.4" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span class="nav-count" id="navMatchesCount">0</span></button>
+  <button data-screen="stats" title="Statistiek" aria-label="Statistiek"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h3v9M10.5 20V6h3v14M17 20V3h3v17M3 20.5h18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </nav>
 
 <section id="home" class="screen on">
-  <div class="section-title season-title">Seizoen</div>
-  <div class="home-results compact-season">
-    <div class="home-result-card"><span>Winst</span><b id="homeWins">0</b></div>
-    <div class="home-result-card"><span>Gelijk</span><b id="homeDraws">0</b></div>
-    <div class="home-result-card"><span>Verlies</span><b id="homeLosses">0</b></div>
-    <div class="home-result-card"><span>Gespeeld / punten</span><b id="homePlayedPoints">0 / 0</b></div>
-  </div>
-
   <div class="home-tabs-row">
     <div class="home-match-tabs">
       <button class="home-match-tab on" data-home-tab="next">Eerst volgende wedstrijd</button>
@@ -95,14 +85,19 @@
   </div>
 
   <div class="player-filter-bar">
-    <select id="playerLevelFilter" aria-label="Filter op niveau">
+    <select id="playerSort" class="icon-filter-select name-sort-icon" aria-label="Sorteren op naam" title="Naam">
+      <option value="name-asc" selected>Naam A → Z</option>
+      <option value="name-desc">Naam Z → A</option>
+    </select>
+
+    <select id="playerLevelFilter" class="icon-filter-select level-filter-icon" aria-label="Filter op niveau" title="Filter op niveau">
       <option value="all">Alle niveaus</option>
       <option value="1">Niveau 1</option>
       <option value="2">Niveau 2</option>
       <option value="3">Niveau 3</option>
     </select>
 
-    <select id="playerPositionFilter" aria-label="Filter op veldpositie">
+    <select id="playerPositionFilter" class="icon-filter-select position-filter-icon" aria-label="Filter op veldpositie" title="Filter op positie">
       <option value="all">Alle posities</option>
       <option value="1">1 · Keeper</option>
       <option value="2">2 · Rechtsback</option>
@@ -115,13 +110,6 @@
       <option value="9">9 · Rechts aanvaller</option>
       <option value="10">10 · Spits / Aanvallende middenvelder</option>
       <option value="11">11 · Links aanvaller</option>
-    </select>
-
-    <select id="playerSort" aria-label="Spelers sorteren">
-      <option value="level-asc" selected>Niveau N1 → N3</option>
-      <option value="level-desc">Niveau N3 → N1</option>
-      <option value="position-asc">Positie 1 → 11</option>
-      <option value="name-asc">Naam A → Z</option>
     </select>
 
     <button type="button" class="player-filter-reset" id="resetPlayerFilters" title="Filters wissen" aria-label="Filters wissen">×</button>
@@ -195,13 +183,14 @@
         <span class="muted">Wedstrijden</span>
         <b id="statsMatches">0/0</b>
       </button>
-      <div class="stats-overview-btn"><span class="muted">Winst</span><b id="statsWins">0</b></div>
-      <div class="stats-overview-btn"><span class="muted">Gelijk</span><b id="statsDraws">0</b></div>
-      <div class="stats-overview-btn"><span class="muted">Verlies</span><b id="statsLosses">0</b></div>
+      <div class="stats-overview-btn season-wdl">
+        <span class="muted">W / G / V</span>
+        <b><span id="statsWins">0</span> / <span id="statsDraws">0</span> / <span id="statsLosses">0</span></b>
+      </div>
       <div class="stats-overview-btn"><span class="muted">Punten</span><b id="statsPoints">0</b></div>
       <div class="stats-overview-btn season-goals">
         <span class="muted">Doelpunten</span>
-        <b><span id="statsGoalsFor">0</span><small> voor</small> / <span id="statsGoalsAgainst">0</span><small> tegen</small></b>
+        <b><span id="statsGoalsFor">0</span><small> V</small> / <span id="statsGoalsAgainst">0</span><small> T</small></b>
       </div>
     </div>
   </div>
@@ -445,60 +434,38 @@ WhatsApp
 </div>
 </div>
 
-<div class="modal" id="playerEditModal" aria-hidden="true">
-  <div class="modal-card player-edit-modal-card">
-    <div class="modal-head">
-      <div>
-        <div class="section-title" style="margin:0">Speler toevoegen / wijzigen</div>
-        <div class="muted">Beheer naam, niveau, posities en standaard beschikbaarheid.</div>
-      </div>
-      <button class="icon-btn" id="closePlayerEdit" aria-label="Sluiten">×</button>
-    </div>
-    
-    <input type="hidden" id="editPlayerId">
-    
-    <label for="editPlayerName">Naam</label>
-    <input id="editPlayerName" placeholder="Naam speler">
-    
-    <label>Niveau</label>
-    <input type="hidden" id="editPlayerLevel" value="2">
-    <div class="player-level-row" id="editPlayerLevelButtons">
-      <button type="button" class="player-level-choice level-1" data-player-level="1">Niveau 1</button>
-      <button type="button" class="player-level-choice level-2" data-player-level="2">Niveau 2</button>
-      <button type="button" class="player-level-choice level-3" data-player-level="3">Niveau 3</button>
-    </div>
-    
-    <label>Posities — meerdere mogelijk</label>
-    <div class="player-edit-positions" id="editPlayerPositions"></div>
-    
-    <label>Voorkeur beschikbaarstatus</label>
-    <input type="hidden" id="editPlayerPreferredAvailability" value="fit">
-    <div class="player-pref-status-row" id="editPlayerPreferredAvailabilityButtons">
-      <button type="button" class="player-pref-status fit" data-pref-status="fit" title="Hele wedstrijd" aria-label="Hele wedstrijd"><span class="pref-dot"></span></button>
-      <button type="button" class="player-pref-status limited" data-pref-status="limited" title="Halve wedstrijd" aria-label="Halve wedstrijd"><span class="pref-dot"></span></button>
-      <button type="button" class="player-pref-status noPlay" data-pref-status="noPlay" title="Niet spelend" aria-label="Niet spelend"><span class="pref-dot"></span></button>
-      <button type="button" class="player-pref-status absent" data-pref-status="absent" title="Afwezig" aria-label="Afwezig"><span class="pref-dot"></span></button>
-    </div>
-    <div class="muted player-pref-help">Deze voorkeur wordt standaard overgenomen bij het voorbereiden van een wedstrijd.</div>
-    
-    <label for="editPlayerAbsenceDate">Datums afwezig</label>
-    <div class="player-absence-add-row">
-      <input id="editPlayerAbsenceDate" type="date" aria-label="Datum afwezig">
-      <button type="button" class="player-absence-add-btn" id="addPlayerAbsenceDate">+</button>
-    </div>
-    <div id="editPlayerAbsenceDates" class="player-absence-dates"></div>
-    <div class="muted player-pref-help">Op deze datums wordt de speler bij het voorbereiden van een wedstrijd automatisch op Afwezig gezet.</div>
-    
-    <div class="actions" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <button class="btn danger" id="deletePlayerFromModal" type="button" style="display:none;padding:8px 14px;background:#fee2e2;color:#dc2626;border:1px solid rgba(220,38,38,0.3);font-weight:700;">Verwijderen</button>
-      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-        <button class="btn ghost" id="cancelPlayerEdit" type="button">Annuleren</button>
-        <button class="btn primary" id="savePlayerEdit" type="button">Opslaan</button>
-      </div>
-    </div>
-  </div>
+<div class="modal" id="playerEditModal" aria-hidden="true"><div class="modal-card player-edit-modal-card">
+<div class="modal-head"><div><div class="section-title" style="margin:0">Speler toevoegen / wijzigen</div><div class="muted">Beheer naam, niveau, posities en standaard beschikbaarheid.</div></div><button class="icon-btn" id="closePlayerEdit" aria-label="Sluiten">×</button></div>
+<input type="hidden" id="editPlayerId">
+<label>Naam</label><input id="editPlayerName" placeholder="Naam speler">
+<label>Niveau</label>
+<input type="hidden" id="editPlayerLevel" value="2">
+<div class="player-level-row" id="editPlayerLevelButtons">
+  <button type="button" class="player-level-choice level-1" data-player-level="1">Niveau 1</button>
+  <button type="button" class="player-level-choice level-2" data-player-level="2">Niveau 2</button>
+  <button type="button" class="player-level-choice level-3" data-player-level="3">Niveau 3</button>
 </div>
+<label>Posities — meerdere mogelijk</label><div class="player-edit-positions" id="editPlayerPositions"></div>
+<label>Voorkeur beschikbaarstatus</label>
+<input type="hidden" id="editPlayerPreferredAvailability" value="fit">
+<div class="player-pref-status-row" id="editPlayerPreferredAvailabilityButtons">
+  <button type="button" class="player-pref-status fit" data-pref-status="fit" title="Hele wedstrijd" aria-label="Hele wedstrijd"><span class="pref-dot"></span></button>
+  <button type="button" class="player-pref-status limited" data-pref-status="limited" title="Halve wedstrijd" aria-label="Halve wedstrijd"><span class="pref-dot"></span></button>
+  <button type="button" class="player-pref-status noPlay" data-pref-status="noPlay" title="Niet spelend" aria-label="Niet spelend"><span class="pref-dot"></span></button>
+  <button type="button" class="player-pref-status absent" data-pref-status="absent" title="Afwezig" aria-label="Afwezig"><span class="pref-dot"></span></button>
+</div>
+<div class="muted player-pref-help">Deze voorkeur wordt standaard overgenomen bij het voorbereiden van een wedstrijd.</div>
 
+<label>Datums afwezig</label>
+<div class="player-absence-add-row">
+  <input id="editPlayerAbsenceDate" type="date" aria-label="Datum afwezig">
+  <button type="button" class="player-absence-add-btn" id="addPlayerAbsenceDate">+</button>
+</div>
+<div id="editPlayerAbsenceDates" class="player-absence-dates"></div>
+<div class="muted player-pref-help">Op deze datums wordt de speler bij het voorbereiden van een wedstrijd automatisch op Afwezig gezet.</div>
+
+<div class="actions"><button class="btn ghost" id="cancelPlayerEdit">Annuleren</button><button class="btn primary" id="savePlayerEdit">Opslaan</button></div>
+</div></div>
 <script src="app.js"></script>
 </body>
 </html>

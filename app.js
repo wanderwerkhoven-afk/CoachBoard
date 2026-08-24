@@ -8,37 +8,6 @@ const XY442={1:[50,82],2:[82,58],3:[61,62],4:[39,62],5:[18,58],6:[39,42],7:[78,4
 const STATUS={fit:['g','Aanwezig en fit'],limited:['o','Halve wedstrijd'],noPlay:['r','Aanwezig, niet spelend'],absent:['k','Afwezig']};
 const KEY='coachboard_v1_state';
 
-// Action message toast system
-function showToast(message, type='success', duration=3000){
-  let container = document.getElementById('toastContainer');
-  if(!container){
-    container = document.createElement('div');
-    container.id = 'toastContainer';
-    document.body.appendChild(container);
-  }
-
-  const icons = {
-    success: '✓',
-    error: '✕',
-    warning: '⚠',
-    info: 'ℹ'
-  };
-
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || '✓'}</span>
-    <span class="toast-text">${message}</span>
-  `;
-
-  container.appendChild(toast);
-
-  setTimeout(()=>{
-    toast.classList.add('toast-out');
-    setTimeout(()=>toast.remove(), 260);
-  }, duration);
-}
-
 
 let state=loadState();
 
@@ -334,9 +303,7 @@ function renderHeader(){
 document.getElementById('saveTeam').addEventListener('click',()=>{
   state.teamName=document.getElementById('teamNameInput').value.trim()||'Mijn Team';
   saveState();
-  renderHeader();
   document.getElementById('teamEditPanel').classList.remove('on');
-  showToast('Teamnaam opgeslagen', 'success');
 });
 document.getElementById('editTeamNameBtn').addEventListener('click',()=>{
   document.getElementById('teamNameInput').value=state.teamName||'';
@@ -352,19 +319,18 @@ document.getElementById('removeClubLogo')?.addEventListener('click',()=>{
   state.clubLogo='';
   saveState();
   renderHeader();
-  showToast('Clublogo verwijderd', 'info');
 });
 document.getElementById('clubLogoInput')?.addEventListener('change',e=>{
   const file=e.target.files?.[0];
   if(!file)return;
   const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
   if(!allowed.includes(file.type)){
-    showToast('Gebruik een PNG, JPG, WEBP of SVG-bestand', 'warning');
+    alert('Gebruik een PNG, JPG, WEBP of SVG-bestand.');
     e.target.value='';
     return;
   }
   if(file.size>2.5*1024*1024){
-    showToast('Kies bij voorkeur een logo kleiner dan 2,5 MB', 'warning');
+    alert('Kies bij voorkeur een logo kleiner dan 2,5 MB.');
     e.target.value='';
     return;
   }
@@ -374,7 +340,6 @@ document.getElementById('clubLogoInput')?.addEventListener('change',e=>{
     saveState();
     renderHeader();
     e.target.value='';
-    showToast('Clublogo bijgewerkt', 'success');
   };
   reader.readAsDataURL(file);
 });
@@ -500,20 +465,16 @@ function closeEditMatch(){editingMatchId=null;editMatchModal.classList.remove('o
 function saveEditedMatch(){
  const m=state.matches.find(x=>x.id===editingMatchId); if(!m)return;
  const result=editResult.value.trim();
- if(!editOpponent.value.trim()||!editDate.value||!editTime.value){
-   showToast('Vul tegenstander, datum en aanvangstijd in', 'warning');
-   return;
- }
- if(result&&!/^\d+\s*[-–:]\s*\d+$/.test(result)){
-   showToast('Gebruik voor de uitslag bijvoorbeeld 3-1', 'warning');
-   return;
- }
+ if(!editOpponent.value.trim()||!editDate.value||!editTime.value){alert('Vul tegenstander, datum en aanvangstijd in.');return}
+ if(result&&!/^\d+\s*[-–:]\s*\d+$/.test(result)){alert('Gebruik voor de uitslag bijvoorbeeld 3-1.');return}
  m.opponent=editOpponent.value.trim();m.date=editDate.value;m.time=editTime.value;m.homeAway=editHomeAway.value;m.result=result;
  localStorage.setItem(KEY,JSON.stringify(state));
  closeEditMatch();
- renderAll();
- bindHomeMatchTabs();if(activeMatchId===m.id)renderMatchDetail();
- showToast('Wedstrijdgegevens opgeslagen', 'success');
+
+
+
+renderAll();
+bindHomeMatchTabs();if(activeMatchId===m.id)renderMatchDetail();
 }
 cancelEditMatch.addEventListener('click',closeEditMatch);saveEditMatch.addEventListener('click',saveEditedMatch);
 editMatchModal.addEventListener('click',e=>{if(e.target===editMatchModal)closeEditMatch()});
@@ -994,7 +955,6 @@ function confirmFinishResult(){
   saveState();
   closeFinishResultModal();
   renderAll();
-  showToast(finishSpecialStatus ? `Wedstrijdstatus ingesteld op ${finishSpecialStatus}` : `Wedstrijd afgerond (${m.result}) en opgeslagen in statistieken`, 'success');
 }
 
 function renderHome(){
@@ -1018,12 +978,6 @@ function renderHome(){
     else losses++;
   });
   const points=wins*3+draws;
-
-  document.getElementById('homeWins').textContent=wins;
-  document.getElementById('homeDraws').textContent=draws;
-  document.getElementById('homeLosses').textContent=losses;
-  document.getElementById('homePlayedPoints').textContent=`${played} / ${points}`;
-
   const now=new Date();
 
   const renderCard=m=>{
@@ -1038,26 +992,26 @@ function renderHome(){
           <div class="muted">${esc(formatDateNL(m.date))} · ${esc(m.time||'—')} · ${esc(m.homeAway||'')} · ${esc(m.matchType||'Competitie')}</div>
         </div>
         <div class="match-head-right">
-          ${isPlayed?`<span class="match-head-score" title="Uitslag">${matchResultDisplay(m)?esc(matchResultDisplay(m)):'–'}</span>`:''}
-          ${s.key==='final'?`<button class="match-refined-open match-stats-eye" data-home-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`:''}
-          ${s.key==='result'?`<button class="home-result-action" data-home-finish="${m.id}">Uitslag invullen</button>`:''}
-          ${s.key!=='final'?`<button class="home-lineup-btn" data-home-lineup="${m.id}" title="Opstelling bekijken">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
-              <circle cx="17" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
-              <circle cx="12" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M3.5 20c.6-3 2.2-4.5 5-4.5M20.5 20c-.6-3-2.2-4.5-5-4.5M8.5 21c.4-2.7 1.6-4 3.5-4s3.1 1.3 3.5 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            Opstelling
-          </button>`:''}
+          ${s.key==='final'?resultScoreButtonHtml(m,`data-home-finish="${m.id}"`):''}
+          ${s.key==='result'?resultScoreButtonHtml(m,`data-home-finish="${m.id}"`):''}
+          ${(s.key==='final'||s.key==='result')?`<button class="match-refined-open match-stats-eye" data-home-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`:''}
+          ${s.key==='prepared'?`<button class="home-lineup-btn lineup-icon-only" data-home-lineup="${m.id}" title="Opstelling bekijken" aria-label="Opstelling bekijken"><svg viewBox="0 0 32 24" aria-hidden="true">
+  <rect x="2.5" y="3" width="27" height="18" rx="1.8"
+        fill="none" stroke="currentColor" stroke-width="1.15"/>
+  <path d="M16 3v18"
+        fill="none" stroke="currentColor" stroke-width="1.05"/>
+  <circle cx="16" cy="12" r="3.1"
+          fill="none" stroke="currentColor" stroke-width="1.05"/>
+  <circle cx="16" cy="12" r=".55" fill="currentColor"/>
+  <path d="M2.5 7.7h4.2v8.6H2.5M29.5 7.7h-4.2v8.6h4.2"
+        fill="none" stroke="currentColor" stroke-width="1"/>
+</svg></button>`:''}
+          <button class="match-refined-open ${s.key==='prepared'?'status-prepared-pencil':s.key==='prepare'?'status-needs-prep-pencil':''}" data-home-open-sheet="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>
         </div>
       </div>
       <div class="match-compact-bottom">
-        <div class="match-bottom-left">
-          <button class="match-inline-status ${s.key}" data-home-status-open="${m.id}">${s.label}</button>
-          ${compactBulletsHtml(m)}
-        </div>
-        <button class="match-refined-open ${s.key==='prepare'?'needs-prep':''}" data-home-open-sheet="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>
+        <button class="match-inline-status ${s.key} status-iconless-hidden" data-home-status-open="${m.id}" aria-label="${s.label}" title="${s.label}"></button>
+        ${compactBulletsHtml(m)}
       </div>
     </div>`;
   };
@@ -1254,11 +1208,6 @@ function openPlayerEditor(id=null){
   const saveBtn=document.getElementById('savePlayerEdit');
   if(saveBtn)saveBtn.textContent='Opslaan';
 
-  const deleteBtn=document.getElementById('deletePlayerFromModal');
-  if(deleteBtn){
-    deleteBtn.style.display=p?'inline-flex':'none';
-  }
-
   const modal=document.getElementById('playerEditModal');
   modal.classList.add('show');
   modal.setAttribute('aria-hidden','false');
@@ -1270,7 +1219,6 @@ function editPlayer(id){openPlayerEdit(id);}
 function deletePlayer(id){
   const p=state.players.find(x=>x.id===id);
   if(!p)return false;
-  const playerName=p.name;
 
   state.players=state.players.filter(x=>x.id!==id);
 
@@ -1297,7 +1245,6 @@ function deletePlayer(id){
 
   localStorage.setItem(KEY,JSON.stringify(state));
   renderAll();
-  showToast(`Speler ${playerName} verwijderd`, 'info');
   return true;
 }
 
@@ -1333,7 +1280,18 @@ function filteredPlayers(){
   });
 }
 
+
+function syncPlayerFilterIconStates(){
+  const level=document.getElementById('playerLevelFilter');
+  const position=document.getElementById('playerPositionFilter');
+  const sort=document.getElementById('playerSort');
+  level?.classList.toggle('filter-active',level.value!=='all');
+  position?.classList.toggle('filter-active',position.value!=='all');
+  sort?.classList.toggle('filter-active',sort.value!=='name-asc');
+}
+
 function renderPlayers(){
+  syncPlayerFilterIconStates();
   const box=document.getElementById('playerList');
   if(!state.players.length){
     box.innerHTML='<div class="card empty">Nog geen spelers toegevoegd.</div>';
@@ -1367,7 +1325,9 @@ function renderPlayers(){
       ${visiblePlayers.map(p=>`
         <div class="player-row-card">
           <div class="player-col player-col-name">
-            <b>${esc(p.name)}</b>
+            <button type="button" class="player-name-open" data-player-open="${p.id}" title="Open spelerblad">
+              ${esc(p.name)}
+            </button>
           </div>
 
           <div class="player-col">
@@ -1388,9 +1348,6 @@ function renderPlayers(){
           </div>
 
           <div class="player-icon-actions">
-            <button class="player-icon-btn view" data-player-open="${p.id}" title="Bekijk spelerstatistiek" aria-label="Bekijk spelerstatistiek">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Zm9.5 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0-2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z" fill="currentColor"/></svg>
-            </button>
             <button class="player-icon-btn edit" data-edit="${p.id}" title="Speler bewerken" aria-label="Speler bewerken">
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m4 16.5-.7 4.2 4.2-.7L18.8 8.7l-3.5-3.5L4 16.5Zm13-13 3.5 3.5 1-1a1.4 1.4 0 0 0 0-2l-1.5-1.5a1.4 1.4 0 0 0-2 0l-1 1Z" fill="currentColor"/></svg>
             </button>
@@ -1400,7 +1357,7 @@ function renderPlayers(){
     </div>`;
 
   box.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openPlayerEditor(b.dataset.edit)));
-  box.querySelectorAll('[data-player-open]').forEach(b=>b.addEventListener('click',()=>showPlayerStats(b.dataset.playerOpen)));
+  box.querySelectorAll('[data-player-open]').forEach(b=>b.addEventListener('click',()=>openPlayerStats(b.dataset.playerOpen)));
 }
 
 
@@ -1448,10 +1405,7 @@ document.getElementById('addMatch').addEventListener('click',()=>{
   const opponent=document.getElementById('matchOpponent').value.trim();
   const date=document.getElementById('matchDate').value;
   const time=document.getElementById('matchTime').value;
-  if(!opponent||!date||!time){
-    showToast('Vul tegenstander, datum en tijd in', 'warning');
-    return;
-  }
+  if(!opponent||!date||!time){alert('Vul tegenstander, datum en tijd in.');return}
 
   const availability={};
   state.players.forEach(p=>availability[p.id]=playerAbsentOnDate(p,date)?'absent':(p.level===3?'limited':(p.preferredAvailability||'fit')));
@@ -1469,8 +1423,6 @@ document.getElementById('addMatch').addEventListener('click',()=>{
   document.getElementById('matchType').value='Competitie';
   saveState();
   document.getElementById('matchAddCard')?.classList.add('collapsed');
-  renderAll();
-  showToast(`Wedstrijd tegen ${opponent} toegevoegd`, 'success');
 });
 let pendingDeleteMatchId=null;
 
@@ -1495,8 +1447,6 @@ function closeDeleteMatchModal(){
 function confirmDeleteMatch(){
   if(!pendingDeleteMatchId)return;
   const id=pendingDeleteMatchId;
-  const match=state.matches.find(m=>m.id===id);
-  const matchName=match?match.opponent:'Wedstrijd';
 
   state.matches=state.matches.filter(m=>m.id!==id);
   localStorage.setItem(KEY,JSON.stringify(state));
@@ -1508,7 +1458,6 @@ function confirmDeleteMatch(){
 
   closeDeleteMatchModal();
   renderAll();
-  showToast(`Wedstrijd tegen ${matchName} verwijderd`, 'info');
 }
 
 document.getElementById('cancelDeleteMatch').addEventListener('click',closeDeleteMatchModal);
@@ -1656,16 +1605,16 @@ function renderMatches(){
           <div class="muted">${esc(formatDateNL(m.date))} · ${esc(m.time||'—')} · ${esc(m.homeAway||'')} · ${esc(m.matchType||'Competitie')}</div>
         </div>
         <div class="match-compact-actions">
-          ${matchResultDisplay(m)?`<span class="match-head-score" title="Uitslag">${esc(matchResultDisplay(m))}</span>`:''}
-          ${s.key==='final'?`<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`:''}
+          ${s.key==='final'
+            ?`${resultScoreButtonHtml(m,`data-open="${m.id}"`)}<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`
+            :s.key==='result'
+              ?`${resultScoreButtonHtml(m,`data-open="${m.id}"`)}<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`
+              :`<button class="match-refined-open ${s.key==='prepared'?'status-prepared-pencil':s.key==='prepare'?'status-needs-prep-pencil':''}" data-open="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>`}
         </div>
       </div>
       <div class="match-compact-bottom">
-        <div class="match-bottom-left">
-          <button class="match-inline-status ${s.key}" data-status-open="${m.id}">${s.label}</button>
-          ${compactBulletsHtml(m)}
-        </div>
-        ${s.key!=='final'?`<button class="match-refined-open ${s.key==='prepare'?'needs-prep':''}" data-open="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>`:''}
+        <button class="match-inline-status ${s.key} status-iconless-hidden" data-status-open="${m.id}" aria-label="${s.label}" title="${s.label}"></button>
+        ${compactBulletsHtml(m)}
       </div>
     </div>`;
   }).join('');
@@ -1724,8 +1673,7 @@ function renderMatchDetail(){
         </div>
 
         <div class="match-detail-actions">
-          ${matchResultDisplay(m)?`<span class="match-head-score" title="Uitslag">${esc(matchResultDisplay(m))}</span>`:''}
-          <button class="sheet-pencil" data-sheet-edit-result="${m.id}" title="Uitslag wijzigen" aria-label="Uitslag wijzigen">✎</button>
+          ${resultScoreButtonHtml(m,`data-sheet-edit-result="${m.id}"`)}
           <button class="match-delete-icon" data-sheet-delete="${m.id}" title="Wedstrijd verwijderen" aria-label="Wedstrijd verwijderen"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
 <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-1 11H8L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" fill="currentColor"/>
 </svg></button>
@@ -2259,7 +2207,6 @@ function generateLineups(){
   m.generatedLineup2=JSON.parse(JSON.stringify(m.lineup2));
 
   saveState();renderMatchDetail();
-  showToast('Opstellingen voor beide helften gegenereerd', 'success');
 
   const h1=lineupPlayers(m.lineup1);
   const h2=lineupPlayers(m.lineup2);
@@ -2611,200 +2558,43 @@ function movePlayerToPosition(half,pid,targetPos){
   saveState();renderMatchDetail();
 }
 
-// ── Hold-to-drag helpers ──────────────────────────────────────────────────
-// A token activates drag only after 200 ms of continuous hold.
-// While dragging the clone follows the finger; the original becomes a ghost.
-// On drop inside the pitch the nearest position is used.
-
-const HOLD_MS = 200; // ms before drag activates
-
-let dragClone = null;       // the floating visual clone
-let ghostEl   = null;       // transparent placeholder at origin
-
-function _startDragVisual(el, clientX, clientY) {
-  // Vibrate for tactile feedback (mobile)
-  if (navigator.vibrate) navigator.vibrate(30);
-
-  // Build a clone that floats above everything
-  const rect = el.getBoundingClientRect();
-  dragClone = el.cloneNode(true);
-  dragClone.style.cssText = `
-    position: fixed;
-    left: ${rect.left}px;
-    top:  ${rect.top}px;
-    width: ${rect.width}px;
-    pointer-events: none;
-    z-index: 9999;
-    margin: 0;
-    transform: translate(0,0) scale(1.13);
-    box-shadow: 0 16px 36px rgba(0,0,0,0.38);
-    opacity: 0.95;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    border-radius: 8px;
-  `;
-  document.body.appendChild(dragClone);
-
-  // Make the original a ghost
-  el.classList.add('drag-ghost');
-
-  // Store offset from touch point to element centre
-  dragState._offsetX = clientX - (rect.left + rect.width  / 2);
-  dragState._offsetY = clientY - (rect.top  + rect.height / 2);
-  dragState._cloneW  = rect.width;
-  dragState._cloneH  = rect.height;
-  dragState.active   = true;
-}
-
-function _moveDragClone(clientX, clientY) {
-  if (!dragClone || !dragState?.active) return;
-  const hw = dragState._cloneW / 2;
-  const hh = dragState._cloneH / 2;
-  dragClone.style.left = (clientX - dragState._offsetX - hw) + 'px';
-  dragClone.style.top  = (clientY - dragState._offsetY - hh) + 'px';
-}
-
-function _endDrag(clientX, clientY) {
-  if (!dragState) return;
-
-  const holdTimer = dragState._holdTimer;
-  clearTimeout(holdTimer);
-
-  if (dragState.active) {
-    // Remove clone and ghost
-    if (dragClone) { dragClone.remove(); dragClone = null; }
-    dragState.el?.classList.remove('drag-ghost', 'dragging');
-
-    // Determine drop target
-    const pitchId = dragState.half === 1 ? 'pitch1' : 'pitch2';
-    const pitch   = document.getElementById(pitchId);
-    const rect    = pitch.getBoundingClientRect();
-
-    if (clientX >= rect.left && clientX <= rect.right &&
-        clientY >= rect.top  && clientY <= rect.bottom) {
-      const pos = findNearestPosition(pitch, clientX, clientY);
-      // Flash the target slot
-      const slots = pitch.querySelectorAll('.slot');
-      slots.forEach(s => { if (+s.dataset.pos === pos) s.classList.add('slot-flash'); });
-      setTimeout(() => slots.forEach(s => s.classList.remove('slot-flash')), 350);
-
-      movePlayerToPosition(dragState.half, dragState.pid, pos);
-    }
-  } else {
-    // Hold didn't complete – was a tap, not drag; nothing to clean up
-    dragState.el?.classList.remove('dragging');
-  }
-
-  dragState = null;
-}
-
-function attachDrag(el) {
-  el.addEventListener('pointerdown', e => {
-    if (e.button !== 0 && e.pointerType === 'mouse') return; // left-click only for mouse
+function attachDrag(el){
+  el.addEventListener('pointerdown',e=>{
     e.preventDefault();
     el.setPointerCapture?.(e.pointerId);
-
-    el.classList.add('hold-ripple');
-    const startX = e.clientX, startY = e.clientY;
-
-    dragState = {
-      pid:  el.dataset.pid,
-      half: getPitchHalfFromId(el.dataset.pitch),
-      el,
-      active: false,
-      _startX: startX,
-      _startY: startY,
-      _holdTimer: setTimeout(() => _startDragVisual(el, e.clientX, e.clientY), HOLD_MS)
-    };
+    el.classList.add('dragging');
+    dragState={pid:el.dataset.pid,half:getPitchHalfFromId(el.dataset.pitch),el};
   });
-
-  el.addEventListener('pointermove', e => {
-    if (!dragState || dragState.el !== el) return;
-    if (!dragState.active) {
-      // Cancel hold if finger moved more than 8px (user is scrolling)
-      const dx = e.clientX - dragState._startX;
-      const dy = e.clientY - dragState._startY;
-      if (Math.sqrt(dx*dx + dy*dy) > 8) {
-        clearTimeout(dragState._holdTimer);
-        el.classList.remove('hold-ripple');
-        dragState = null;
-      }
-      return;
+  el.addEventListener('pointerup',e=>{
+    if(!dragState)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    const rect=pitch.getBoundingClientRect();
+    if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
+      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
+      movePlayerToPosition(dragState.half,dragState.pid,pos);
     }
-    e.preventDefault();
-    _moveDragClone(e.clientX, e.clientY);
-  });
-
-  el.addEventListener('pointerup', e => {
-    el.classList.remove('hold-ripple');
-    if (!dragState || dragState.el !== el) return;
-    _endDrag(e.clientX, e.clientY);
-  });
-
-  el.addEventListener('pointercancel', e => {
-    el.classList.remove('hold-ripple');
-    if (!dragState || dragState.el !== el) return;
-    clearTimeout(dragState._holdTimer);
-    if (dragClone) { dragClone.remove(); dragClone = null; }
-    dragState.el?.classList.remove('drag-ghost', 'dragging');
-    dragState = null;
+    dragState.el?.classList.remove('dragging');dragState=null;
   });
 }
 
-function attachBenchDrag(el) {
-  el.addEventListener('pointerdown', e => {
-    if (e.button !== 0 && e.pointerType === 'mouse') return;
+function attachBenchDrag(el){
+  el.addEventListener('pointerdown',e=>{
     e.preventDefault();
     el.setPointerCapture?.(e.pointerId);
-
-    el.classList.add('hold-ripple');
-    const startX = e.clientX, startY = e.clientY;
-
-    dragState = {
-      pid:       el.dataset.pid,
-      half:      +el.dataset.half,
-      el,
-      fromBench: true,
-      active:    false,
-      _startX:   startX,
-      _startY:   startY,
-      _holdTimer: setTimeout(() => _startDragVisual(el, e.clientX, e.clientY), HOLD_MS)
-    };
+    el.classList.add('dragging');
+    dragState={pid:el.dataset.pid,half:+el.dataset.half,el,fromBench:true};
   });
-
-  el.addEventListener('pointermove', e => {
-    if (!dragState || dragState.el !== el) return;
-    if (!dragState.active) {
-      const dx = e.clientX - dragState._startX;
-      const dy = e.clientY - dragState._startY;
-      if (Math.sqrt(dx*dx + dy*dy) > 8) {
-        clearTimeout(dragState._holdTimer);
-        el.classList.remove('hold-ripple');
-        dragState = null;
-      }
-      return;
+  el.addEventListener('pointerup',e=>{
+    if(!dragState)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    const rect=pitch.getBoundingClientRect();
+    if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
+      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
+      movePlayerToPosition(dragState.half,dragState.pid,pos);
     }
-    e.preventDefault();
-    _moveDragClone(e.clientX, e.clientY);
-  });
-
-  el.addEventListener('pointerup', e => {
-    el.classList.remove('hold-ripple');
-    if (!dragState || dragState.el !== el) return;
-    _endDrag(e.clientX, e.clientY);
-  });
-
-  el.addEventListener('pointercancel', e => {
-    el.classList.remove('hold-ripple');
-    if (!dragState || dragState.el !== el) return;
-    clearTimeout(dragState._holdTimer);
-    if (dragClone) { dragClone.remove(); dragClone = null; }
-    dragState.el?.classList.remove('drag-ghost', 'dragging');
-    dragState = null;
+    dragState.el?.classList.remove('dragging');dragState=null;
   });
 }
-
-
-
 
 function restoreGenerated(half){
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
@@ -3479,9 +3269,6 @@ function renderStats(){
             ${(r.p.positions||[]).map(pos=>`<span class="stats-position-pill">${pos}</span>`).join('')||'<span class="muted">—</span>'}
           </div>
 
-          <div class="stats-eye-wrap">
-            <button type="button" class="stats-eye-btn" data-player-stats="${r.p.id}" title="Bekijk spelerstatistiek" aria-label="Bekijk spelerstatistiek">${eyeIcon}</button>
-          </div>
         </div>
       `).join('')}
     </div>`;
@@ -3510,6 +3297,16 @@ function matchScorerSummary(match){
   }).join('');
 }
 
+
+
+function resultScoreButtonHtml(m,attrs=''){
+  const final=Boolean((m.result||'').trim());
+  const label=final ? esc(matchResultDisplay(m)||m.result) : '.. - ..';
+  const title=final ? 'Uitslag bekijken' : 'Uitslag invullen';
+  return `<button class="result-score-icon ${final?'is-final':'is-pending'}" ${attrs} title="${title}" aria-label="${title}">
+    <span>${label}</span>
+  </button>`;
+}
 
 function statsEyeIcon(){
   return `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
@@ -4090,230 +3887,94 @@ async function ensureHtml2Canvas(){
   });
 }
 
-function buildExportNodeForHalf(half, isPreview=false){
-  const m = state.matches.find(x => x.id === activeMatchId);
-  if(!m) return null;
+function findHalfCaptureElement(half){
+  const btn=document.querySelector(`[data-copy-half="${half}"]`);
+  if(!btn)return null;
 
-  const lineup = half === 1 ? m.lineup1 : m.lineup2;
-  const benchIds = getLineupBenchIds ? getLineupBenchIds(m, lineup) : [];
-  const benchPlayers = benchIds.map(id => state.players.find(p => p.id === id)).filter(Boolean);
-
-  const wrapper = document.createElement('div');
-  wrapper.style.position = 'fixed';
-  wrapper.style.left = '-9999px';
-  wrapper.style.top = '-9999px';
-  wrapper.style.width = '800px';
-  wrapper.style.background = '#ffffff';
-  wrapper.style.padding = '24px';
-  wrapper.style.borderRadius = '16px';
-  wrapper.style.fontFamily = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-  wrapper.style.color = '#0f172a';
-  wrapper.style.boxSizing = 'border-box';
-
-  const clubName = state.teamName || 'CoachBoard';
-  const matchTitle = fullMatchTitle(m);
-  const matchMeta = `${formatDateNL(m.date)} · ${m.time || ''} · ${m.homeAway || ''}`;
-
-  let benchHtml = '';
-  if(benchPlayers.length){
-    benchHtml = `
-      <div style="margin-top:16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;">
-        <div style="font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:8px;">
-          Wisselspelers (${benchPlayers.length})
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          ${benchPlayers.map(p => {
-            const bg = p.level === 1 ? '#d1fae5' : p.level === 2 ? '#fef3c7' : '#fee2e2';
-            const color = p.level === 1 ? '#047857' : p.level === 2 ? '#b45309' : '#8e1017';
-            return `<span style="display:inline-flex;align-items:center;gap:6px;background:${bg};color:${color};font-weight:700;font-size:13px;padding:6px 12px;border-radius:9999px;border:1px solid rgba(0,0,0,0.06);">${esc(p.name)} · N${p.level}</span>`;
-          }).join('')}
-        </div>
-      </div>
-    `;
+  // Capture the visual half section: field + its substitutes, excluding the heading controls.
+  let node=btn.parentElement;
+  while(node && node!==document.body){
+    const text=node.textContent||'';
+    const hasField=node.querySelector?.('.pitch,.football-field,.lineup-field,[class*="pitch"],[class*="field"]');
+    const hasHalf=text.includes(`${half}e helft`);
+    if(hasField && hasHalf)return node;
+    node=node.parentElement;
   }
 
-  wrapper.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:2px solid #f1f5f9;padding-bottom:12px;">
-      <div>
-        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#0f172a;line-height:1.2;">${esc(matchTitle)}</div>
-        <div style="font-size:13.5px;color:#64748b;font-weight:600;margin-top:2px;">${esc(matchMeta)} · ${esc(clubName)}</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#d91b24;">${half}e helft</div>
-        <div style="font-size:12.5px;color:#64748b;font-weight:600;">${half === 1 ? '0–35 min' : '35–70 min'}</div>
-      </div>
-    </div>
-    <div class="pitch" id="exportPitchCanvas" style="width:100%;aspect-ratio:1700/1120;position:relative;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.15);overflow:hidden;border:2px solid rgba(255,255,255,0.85);"></div>
-    ${benchHtml}
-  `;
-
-  document.body.appendChild(wrapper);
-
-  const pitchEl = wrapper.querySelector('#exportPitchCanvas');
-  const xy = (m.formation || '4-3-3') === '4-4-2' ? XY442 : XY433;
-
-  Object.keys(xy).forEach(pos => {
-    const s = document.createElement('div');
-    s.style.position = 'absolute';
-    s.style.transform = 'translate(-50%, -50%)';
-    s.style.width = '64px';
-    s.style.height = '38px';
-    s.style.border = '2px dashed rgba(255,255,255,0.65)';
-    s.style.borderRadius = '9999px';
-    s.style.background = 'rgba(0,0,0,0.08)';
-    s.style.left = xy[pos][0] + '%';
-    s.style.top = xy[pos][1] + '%';
-    pitchEl.appendChild(s);
-  });
-
-  Object.entries(lineup || {}).forEach(([pos, pid]) => {
-    const p = state.players.find(x => x.id === pid);
-    if(!p || !xy[pos]) return;
-
-    const d = document.createElement('div');
-    d.style.position = 'absolute';
-    d.style.transform = 'translate(-50%, -50%)';
-    d.style.padding = '6px 12px';
-    d.style.borderRadius = '10px';
-    d.style.border = '1.5px solid rgba(0,0,0,0.12)';
-    d.style.boxShadow = '0 4px 10px rgba(0,0,0,0.22)';
-    d.style.fontFamily = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif";
-    d.style.fontSize = '13.5px';
-    d.style.fontWeight = '800';
-    d.style.background = '#ffffff';
-    d.style.color = '#0f172a';
-    d.style.whiteSpace = 'nowrap';
-    d.style.display = 'flex';
-    d.style.alignItems = 'center';
-    d.style.gap = '8px';
-    d.style.zIndex = '10';
-    d.style.left = xy[pos][0] + '%';
-    d.style.top = xy[pos][1] + '%';
-
-    const badge = document.createElement('span');
-    badge.style.width = '24px';
-    badge.style.height = '24px';
-    badge.style.borderRadius = '7px';
-    badge.style.display = 'inline-flex';
-    badge.style.alignItems = 'center';
-    badge.style.justifyContent = 'center';
-    badge.style.fontFamily = "'Chakra Petch', monospace";
-    badge.style.fontWeight = '700';
-    badge.style.fontSize = '13px';
-    badge.style.color = '#ffffff';
-    badge.style.background = p.level === 1 ? 'linear-gradient(135deg, #22c55e, #16a34a)' :
-                             p.level === 2 ? 'linear-gradient(135deg, #f59e0b, #d97706)' :
-                                             'linear-gradient(135deg, #ea580c, #c2410c)';
-    badge.textContent = pos;
-
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = (p.name || '').trim().split(/\s+/)[0] || p.name;
-
-    d.appendChild(badge);
-    d.appendChild(nameSpan);
-    pitchEl.appendChild(d);
-  });
-
-  return wrapper;
+  // Fallback: nearest section/card around the button.
+  return btn.closest('section,.card,[class*="half"]') || btn.parentElement?.nextElementSibling;
 }
 
-async function copyHalfAsImage(half, button){
-  const originalText = button.innerHTML;
-  let exportWrapper = null;
+
+async function writePngBlobToClipboard(blob){
+  if(!navigator.clipboard || !window.ClipboardItem){
+    throw new Error('IMAGE_CLIPBOARD_UNSUPPORTED');
+  }
+
+  // Rebuild as a true PNG blob so ClipboardItem always receives image bytes,
+  // never a URL/string representation.
+  const pngBlob=blob.type==='image/png'
+    ? blob
+    : new Blob([await blob.arrayBuffer()],{type:'image/png'});
+
+  const item=new ClipboardItem({'image/png':pngBlob});
+  await navigator.clipboard.write([item]);
+}
+
+async function copyHalfAsImage(half,button){
   try{
-    button.disabled = true;
-    button.innerHTML = '⏳ Bezig...';
+    const target=findHalfCaptureElement(half);
+    if(!target)throw new Error('Opstelling niet gevonden.');
 
-    const html2canvas = await ensureHtml2Canvas();
-    exportWrapper = buildExportNodeForHalf(half);
-    if(!exportWrapper) throw new Error('Opstelling niet gevonden.');
+    const html2canvas=await ensureHtml2Canvas();
 
-    const canvas = await html2canvas(exportWrapper, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true,
-      logging: false
+    // Hide action controls only while the screenshot is generated.
+    const controls=target.querySelectorAll('button,select');
+    const old=[];
+    controls.forEach(el=>{
+      old.push([el,el.style.visibility]);
+      el.style.visibility='hidden';
     });
 
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    if(!blob) throw new Error('Afbeelding kon niet worden gemaakt.');
+    const canvas=await html2canvas(target,{
+      backgroundColor:'#ffffff',
+      scale:2,
+      useCORS:true,
+      logging:false
+    });
 
-    // 1. Probeer klembord
-    let copiedToClipboard = false;
-    if(navigator.clipboard && window.ClipboardItem){
-      try {
-        await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-        copiedToClipboard = true;
-      } catch(clipErr) {
-        console.warn('Clipboard write failed, fallback to share/download', clipErr);
-      }
-    }
+    old.forEach(([el,v])=>el.style.visibility=v);
 
-    if(copiedToClipboard){
-      button.innerHTML = '✓ Afbeelding gekopieerd';
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!blob)throw new Error('Afbeelding kon niet worden gemaakt.');
+
+    try{
+      await writePngBlobToClipboard(blob);
+      const original=button.innerHTML;
+      button.innerHTML='✓ Afbeelding gekopieerd';
       button.classList.add('copied');
-      showToast(`${half}e helft opstelling gekopieerd`, 'success');
-      setTimeout(() => {
-        button.innerHTML = originalText;
+      setTimeout(()=>{
+        button.innerHTML=original;
         button.classList.remove('copied');
-        button.disabled = false;
-      }, 2000);
-      return;
+      },1800);
+    }catch(copyErr){
+      // No link is ever copied. Fallback is a real PNG download.
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=`opstelling-${half}e-helft.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const original=button.innerHTML;
+      button.innerHTML='↓ PNG gedownload';
+      setTimeout(()=>button.innerHTML=original,1800);
     }
-
-    // 2. Probeer Web Share
-    const file = new File([blob], `opstelling-${half}e-helft.png`, { type: 'image/png' });
-    if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
-      try {
-        await navigator.share({
-          title: `Opstelling ${half}e helft`,
-          files: [file]
-        });
-        button.innerHTML = '✓ Gedeeld / Opgeslagen';
-        showToast(`${half}e helft opstelling gedeeld`, 'success');
-        setTimeout(() => {
-          button.innerHTML = originalText;
-          button.disabled = false;
-        }, 2000);
-        return;
-      } catch(shareErr) {
-        if(shareErr.name === 'AbortError') {
-          button.innerHTML = originalText;
-          button.disabled = false;
-          return;
-        }
-      }
-    }
-
-    // 3. Fallback download
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `opstelling-${half}e-helft.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-
-    button.innerHTML = '✓ Afbeelding gedownload';
-    showToast(`${half}e helft opstelling gedownload`, 'success');
-    setTimeout(() => {
-      button.innerHTML = originalText;
-      button.disabled = false;
-    }, 2000);
-
   }catch(err){
-    console.error('Error copying lineup image:', err);
-    button.innerHTML = originalText;
-    button.disabled = false;
-    showToast('Kopiëren van afbeelding mislukt', 'error');
-  } finally {
-    if(exportWrapper && exportWrapper.parentElement){
-      exportWrapper.parentElement.removeChild(exportWrapper);
-    }
+    alert('Kopiëren van de afbeelding lukt in deze browser niet. Probeer Chrome, Edge of Safari met klembordtoegang.');
   }
 }
-
 
 document.addEventListener('click',e=>{
   const btn=e.target.closest('[data-copy-half]');
@@ -4325,99 +3986,59 @@ document.addEventListener('click',e=>{
 
 
 async function copyPreviewHalfAsImage(half,button){
-  const originalText = button.innerHTML;
-  let exportWrapper = null;
   try{
-    button.disabled = true;
-    button.innerHTML = '⏳ Bezig...';
+    const card=document.querySelector(`[data-preview-card="${half}"]`);
+    if(!card)throw new Error('Opstelling niet gevonden.');
 
-    const html2canvas = await ensureHtml2Canvas();
-    exportWrapper = buildExportNodeForHalf(half, true);
-    if(!exportWrapper) throw new Error('Opstelling niet gevonden.');
+    const html2canvas=await ensureHtml2Canvas();
 
-    const canvas = await html2canvas(exportWrapper, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true,
-      logging: false
+    // Hide only preview control buttons during capture.
+    const controls=card.querySelectorAll('button');
+    const previous=[];
+    controls.forEach(el=>{
+      previous.push([el,el.style.visibility]);
+      el.style.visibility='hidden';
     });
 
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    if(!blob) throw new Error('Afbeelding kon niet worden gemaakt.');
+    const canvas=await html2canvas(card,{
+      backgroundColor:'#ffffff',
+      scale:2,
+      useCORS:true,
+      logging:false
+    });
 
-    let copiedToClipboard = false;
-    if(navigator.clipboard && window.ClipboardItem){
-      try {
-        await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-        copiedToClipboard = true;
-      } catch(clipErr) {
-        console.warn('Clipboard write failed, trying share/download fallback', clipErr);
-      }
-    }
+    previous.forEach(([el,v])=>el.style.visibility=v);
 
-    if(copiedToClipboard){
-      button.innerHTML = '✓ Afbeelding gekopieerd';
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!blob)throw new Error('Afbeelding kon niet worden gemaakt.');
+
+    try{
+      await writePngBlobToClipboard(blob);
+      const original=button.innerHTML;
+      button.innerHTML='✓ Afbeelding gekopieerd';
       button.classList.add('copied');
-      showToast(`${half}e helft opstelling gekopieerd`, 'success');
-      setTimeout(() => {
-        button.innerHTML = originalText;
+      setTimeout(()=>{
+        button.innerHTML=original;
         button.classList.remove('copied');
-        button.disabled = false;
-      }, 2000);
-      return;
+      },1800);
+    }catch(copyErr){
+      // Never place a URL on the clipboard; use a real PNG file fallback.
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=`opstelling-${half}e-helft.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const original=button.innerHTML;
+      button.innerHTML='↓ PNG gedownload';
+      setTimeout(()=>button.innerHTML=original,1800);
     }
-
-    const file = new File([blob], `opstelling-${half}e-helft.png`, { type: 'image/png' });
-    if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
-      try {
-        await navigator.share({
-          title: `Opstelling ${half}e helft`,
-          files: [file]
-        });
-        button.innerHTML = '✓ Gedeeld / Opgeslagen';
-        showToast(`${half}e helft opstelling gedeeld`, 'success');
-        setTimeout(() => {
-          button.innerHTML = originalText;
-          button.disabled = false;
-        }, 2000);
-        return;
-      } catch(shareErr) {
-        if(shareErr.name === 'AbortError') {
-          button.innerHTML = originalText;
-          button.disabled = false;
-          return;
-        }
-      }
-    }
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `opstelling-${half}e-helft.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-
-    button.innerHTML = '✓ Afbeelding gedownload';
-    showToast(`${half}e helft opstelling gedownload`, 'success');
-    setTimeout(() => {
-      button.innerHTML = originalText;
-      button.disabled = false;
-    }, 2000);
-
   }catch(err){
-    console.error('Error copying lineup preview image:', err);
-    button.innerHTML = originalText;
-    button.disabled = false;
-    showToast('Kopiëren van afbeelding mislukt', 'error');
-  } finally {
-    if(exportWrapper && exportWrapper.parentElement){
-      exportWrapper.parentElement.removeChild(exportWrapper);
-    }
+    alert('Kopiëren van de afbeelding lukt in deze browser niet. Probeer Chrome, Edge of Safari met klembordtoegang.');
   }
 }
-
 
 document.addEventListener('click',e=>{
   const btn=e.target.closest('[data-copy-preview-half]');
@@ -4428,20 +4049,13 @@ document.addEventListener('click',e=>{
 });
 
 
-
 document.getElementById('closePlayerEdit')?.addEventListener('click',closePlayerEdit);
 document.getElementById('cancelPlayerEdit')?.addEventListener('click',closePlayerEdit);
 document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
   const id=document.getElementById('editPlayerId').value;
   const name=document.getElementById('editPlayerName').value.trim();
-  if(!name){
-    showToast('Vul een naam in', 'warning');
-    return;
-  }
-  if(!editPlayerSelectedPositions.length){
-    showToast('Selecteer minimaal één positie', 'warning');
-    return;
-  }
+  if(!name){alert('Vul een naam in.');return}
+  if(!editPlayerSelectedPositions.length){alert('Selecteer minimaal één positie.');return}
 
   const level=+document.getElementById('editPlayerLevel').value;
   const preferredAvailability=document.getElementById('editPlayerPreferredAvailability').value||'fit';
@@ -4457,7 +4071,6 @@ document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
     p.absenceDates=[...editPlayerAbsenceDates].sort();
 
     syncPlayerAbsenceToUnpreparedMatches(p,oldDates);
-    showToast(`Speler ${name} bijgewerkt`, 'success');
   }else{
     const p={
       id:uid('p'),
@@ -4470,26 +4083,10 @@ document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
     };
     state.players.push(p);
     syncPlayerAbsenceToUnpreparedMatches(p,[]);
-    showToast(`Speler ${name} toegevoegd`, 'success');
   }
 
   saveState();
   closePlayerEdit();
-  renderAll();
-});
-
-document.getElementById('deletePlayerFromModal')?.addEventListener('click',()=>{
-  const id=document.getElementById('editPlayerId').value;
-  if(!id)return;
-  const p=state.players.find(x=>x.id===id);
-  if(!p)return;
-  if(!confirm(`Weet je zeker dat je ${p.name} wilt verwijderen?`))return;
-  deletePlayer(id);
-  closePlayerEdit();
-  if(currentPlayerStatsId===id){
-    currentPlayerStatsId=null;
-    show('players');
-  }
   renderAll();
 });
 
