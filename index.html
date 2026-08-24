@@ -485,9 +485,12 @@ WhatsApp
     <div id="editPlayerAbsenceDates" class="player-absence-dates"></div>
     <div class="muted player-pref-help">Op deze datums wordt de speler bij het voorbereiden van een wedstrijd automatisch op Afwezig gezet.</div>
     
-    <div class="actions">
-      <button class="btn ghost" id="cancelPlayerEdit">Annuleren</button>
-      <button class="btn primary" id="savePlayerEdit">Opslaan</button>
+    <div class="actions" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <button class="btn danger" id="deletePlayerFromModal" type="button" style="display:none;padding:8px 14px;background:#fee2e2;color:#dc2626;border:1px solid rgba(220,38,38,0.3);font-weight:700;">Verwijderen</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <button class="btn ghost" id="cancelPlayerEdit" type="button">Annuleren</button>
+        <button class="btn primary" id="savePlayerEdit" type="button">Opslaan</button>
+      </div>
     </div>
   </div>
 </div>

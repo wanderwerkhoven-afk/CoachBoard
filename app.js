@@ -1252,6 +1252,11 @@ function openPlayerEditor(id=null){
   const saveBtn=document.getElementById('savePlayerEdit');
   if(saveBtn)saveBtn.textContent='Opslaan';
 
+  const deleteBtn=document.getElementById('deletePlayerFromModal');
+  if(deleteBtn){
+    deleteBtn.style.display=p?'inline-flex':'none';
+  }
+
   const modal=document.getElementById('playerEditModal');
   modal.classList.add('show');
   modal.setAttribute('aria-hidden','false');
@@ -4310,6 +4315,21 @@ document.getElementById('savePlayerEdit')?.addEventListener('click',()=>{
 
   saveState();
   closePlayerEdit();
+  renderAll();
+});
+
+document.getElementById('deletePlayerFromModal')?.addEventListener('click',()=>{
+  const id=document.getElementById('editPlayerId').value;
+  if(!id)return;
+  const p=state.players.find(x=>x.id===id);
+  if(!p)return;
+  if(!confirm(`Weet je zeker dat je ${p.name} wilt verwijderen?`))return;
+  deletePlayer(id);
+  closePlayerEdit();
+  if(currentPlayerStatsId===id){
+    currentPlayerStatsId=null;
+    show('players');
+  }
   renderAll();
 });
 
