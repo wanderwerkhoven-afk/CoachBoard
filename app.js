@@ -522,7 +522,7 @@ function saveEditedMatch(){
    return;
  }
  m.opponent=editOpponent.value.trim();m.date=editDate.value;m.time=editTime.value;m.homeAway=editHomeAway.value;m.result=result;
- localStorage.setItem(KEY,JSON.stringify(state));
+ saveState();
  closeEditMatch();
  renderAll();
  bindHomeMatchTabs();if(activeMatchId===m.id)renderMatchDetail();
@@ -587,7 +587,7 @@ document.addEventListener('change',e=>{
   const match=state.matches.find(x=>x.id===note.dataset.matchNote);
   if(!match)return;
   match.notes=note.value;
-  localStorage.setItem(KEY,JSON.stringify(state));
+  saveState();
 });
 const editMatchSheetInfo=document.getElementById('editMatchSheetInfo');
 if(editMatchSheetInfo)editMatchSheetInfo.addEventListener('click',e=>{
@@ -1308,7 +1308,7 @@ function deletePlayer(id){
     rebuildStoredPlayerStats();
   }
 
-  localStorage.setItem(KEY,JSON.stringify(state));
+  saveState();
   renderAll();
   showToast(`Speler ${playerName} verwijderd`, 'info');
   return true;
@@ -1512,7 +1512,7 @@ function confirmDeleteMatch(){
   const matchName=match?match.opponent:'Wedstrijd';
 
   state.matches=state.matches.filter(m=>m.id!==id);
-  localStorage.setItem(KEY,JSON.stringify(state));
+  saveState();
 
   if(activeMatchId===id){
     activeMatchId=null;
@@ -3152,7 +3152,7 @@ function restorePreparedMatch(button){
   rebuildStoredPlayerStats();
 
   // Direct persistent opslaan.
-  localStorage.setItem(KEY,JSON.stringify(state));
+  saveState();
 
   activeMatchId=match.id;
 
