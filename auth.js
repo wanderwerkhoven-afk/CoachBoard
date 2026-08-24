@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // auth.js — CoachBoard Firebase Authentication controller
 // ============================================================
 import {
@@ -45,8 +45,18 @@ async function handleSignIn(e) {
   const email    = (userInput?.value || "").trim();
   const password = (passInput?.value || "").trim();
 
-  if (!email || !password) {
+  if (!email && !password) {
     window.showToast?.("Vul een e-mailadres en wachtwoord in.", "warning");
+    return;
+  }
+  if (!email) {
+    window.showToast?.("Vul uw e-mailadres in.", "warning");
+    userInput?.focus();
+    return;
+  }
+  if (!password) {
+    window.showToast?.("Vul uw wachtwoord in.", "warning");
+    passInput?.focus();
     return;
   }
 
@@ -56,7 +66,8 @@ async function handleSignIn(e) {
     if (passInput) passInput.value = "";
     window.showToast?.("Welkom terug!", "success");
   } catch (err) {
-    window.showToast?.(firebaseErrorMessage(err.code), "error");
+    const errorMsg = firebaseErrorMessage(err.code);
+    window.showToast?.(errorMsg, "error", 4500);
   }
 }
 
