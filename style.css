@@ -2058,3 +2058,34 @@ header {
   color: var(--black);
   margin-top: 4px;
 }
+
+
+/* Match Add Form Styling */
+.match-add-card.collapsed {
+  display: none !important;
+}
+
+.match-add-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 540px) {
+  .match-add-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+#addMatch {
+  margin-top: 8px;
+  margin-bottom: 14px;
+}
+
+.match-type-help {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 4px;
+}
