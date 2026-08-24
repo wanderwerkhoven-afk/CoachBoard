@@ -4674,6 +4674,28 @@ document.getElementById('forgotPassLink')?.addEventListener('click', e => {
   showToast('Neem contact op met de beheerder om uw wachtwoord te herstellen.', 'info', 4000);
 });
 
+// Password visibility toggle
+document.querySelectorAll('.btn-toggle-pwd').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const targetId = btn.dataset.target;
+    const input = document.getElementById(targetId);
+    if(!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    const iconEye = btn.querySelector('.icon-eye');
+    const iconEyeOff = btn.querySelector('.icon-eye-off');
+    if(iconEye && iconEyeOff){
+      iconEye.hidden = isPassword;
+      iconEyeOff.hidden = !isPassword;
+    }
+  });
+});
+
 // Initialize auth check on load
 checkAuthStatus();
+
 

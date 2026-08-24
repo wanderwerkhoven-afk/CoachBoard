@@ -2426,7 +2426,7 @@ header {
 }
 
 /* ==========================================================================
-   AUTH LOGIN SCREEN (Grass / Pitch background)
+   AUTH LOGIN SCREEN (Clean White BG & Translucent Glass Card)
    ========================================================================== */
 .auth-screen {
   position: fixed;
@@ -2441,11 +2441,12 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #1b4332;
+  background: #f8fafc;
   background-image: 
-    radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 60%),
-    repeating-linear-gradient(0deg, #1b4332 0px, #1b4332 30px, #143628 30px, #143628 60px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    radial-gradient(at 0% 0%, rgba(217, 27, 36, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 24px 24px;
   padding: 16px;
   overflow-y: auto;
   transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -2460,27 +2461,24 @@ header {
 .login-wrap {
   width: 100%;
   margin: auto;
-  max-width: 480px;
-  min-height: 640px;
+  max-width: 460px;
+  min-height: 620px;
   position: relative;
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
-  background-color: #143628;
-  background-image: 
-    linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(4, 120, 87, 0.05) 100%),
-    repeating-linear-gradient(0deg, #1b4332 0px, #1b4332 25px, #143628 25px, #143628 50px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%2322c55e' fill-opacity='0.06'%3E%3Ccircle cx='40' cy='40' r='30' fill='none' stroke='%23ffffff' stroke-width='2' stroke-opacity='0.15'/%3E%3C/g%3E%3C/svg%3E");
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .login-html {
   width: 100%;
   height: 100%;
-  min-height: 640px;
-  padding: 50px 40px 40px 40px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  min-height: 620px;
+  padding: 48px 36px 36px 36px;
+  background: transparent;
 }
 
 .login-html .sign-in-htm,
@@ -2493,7 +2491,7 @@ header {
   transform: rotateY(180deg);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transition: all .4s linear;
+  transition: all .4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .login-html .sign-in,
@@ -2526,7 +2524,7 @@ header {
 .login-html .sign-up:checked + .tab {
   color: #ffffff;
   border-color: #d91b24;
-  text-shadow: 0 0 12px rgba(217, 27, 36, 0.4);
+  text-shadow: 0 0 14px rgba(217, 27, 36, 0.45);
 }
 
 .login-form {
@@ -2544,55 +2542,87 @@ header {
 .login-form .group .input,
 .login-form .group .button {
   width: 100%;
-  color: #ffffff;
   display: block;
 }
 
-.login-form .group .input,
-.login-form .group .button {
-  border: 1px solid rgba(255,255,255,0.15);
+.login-form .group .input {
+  border: 1.5px solid rgba(255,255,255,0.18);
   padding: 13px 18px;
-  border-radius: 25px;
-  background: rgba(255,255,255,0.08);
-  font-size: 14.5px;
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
   font-family: inherit;
   box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: all 0.18s ease;
 }
 
 .login-form .group .input:focus {
   outline: none;
   border-color: #d91b24;
-  background: rgba(255,255,255,0.14);
-  box-shadow: 0 0 0 3px rgba(217,27,36,0.25);
+  box-shadow: 0 0 0 3px rgba(217,27,36,0.3), 0 2px 10px rgba(0,0,0,0.15);
 }
 
-.login-form .group input[data-type="password"] {
-  text-security: circle;
-  -webkit-text-security: circle;
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrap .input {
+  padding-right: 50px !important;
+}
+
+.btn-toggle-pwd {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  cursor: pointer;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-toggle-pwd:hover {
+  color: #0f172a !important;
+  background: rgba(0,0,0,0.06) !important;
 }
 
 .login-form .group .label {
-  color: #94a3b8;
+  color: #cbd5e1;
   font-size: 11.5px;
   font-weight: 700;
-  margin-bottom: 5px;
-  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
 }
 
 .login-form .group .button {
   background: linear-gradient(135deg, #d91b24, #b91018);
+  color: #ffffff;
   border: none;
   font-weight: 800;
   letter-spacing: 0.6px;
   cursor: pointer;
   margin-top: 20px;
-  box-shadow: 0 6px 18px rgba(217, 27, 36, 0.35);
+  padding: 14px 20px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 20px rgba(217, 27, 36, 0.4);
   transition: all 0.2s ease;
 }
 
 .login-form .group .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(217, 27, 36, 0.45);
+  box-shadow: 0 10px 24px rgba(217, 27, 36, 0.5);
 }
 
 .login-form .group .button:active {
@@ -2600,8 +2630,8 @@ header {
 }
 
 .login-form .group label {
-  color: #cbd5e1;
-  font-size: 13px;
+  color: #e2e8f0;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -2610,13 +2640,13 @@ header {
 }
 
 .login-form .group label .icon {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   border-radius: 4px;
   position: relative;
   display: inline-block;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.35);
   flex-shrink: 0;
 }
 
@@ -2638,7 +2668,7 @@ header {
 }
 
 .login-form .group label .icon:after {
-  top: 6px;
+  top: 7px;
   right: 1px;
   transform: scale(0) rotate(0);
 }
@@ -2670,8 +2700,8 @@ header {
 
 .login-html .hr {
   height: 1px;
-  margin: 30px 0 24px 0;
-  background: rgba(255,255,255,0.12);
+  margin: 28px 0 22px 0;
+  background: rgba(255,255,255,0.14);
 }
 
 .login-html .foot-lnk {
@@ -2693,6 +2723,7 @@ header {
   color: #ffffff;
   text-decoration: underline;
 }
+
 
 /* Header right tools & logout */
 .header-right-tools {
