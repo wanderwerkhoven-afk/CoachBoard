@@ -322,28 +322,42 @@ function bindPlayerPdfDoubleClick(){
 }
 
 
-function renderAll(){renderHeader();renderHome();renderPlayers();renderMatches();if(document.getElementById('stats').classList.contains('on'))renderStats();}
+function renderAll(){
+  try{
+    renderHeader();
+    renderHome();
+    renderPlayers();
+    renderMatches();
+    if(document.getElementById('stats')?.classList.contains('on'))renderStats();
+  }catch(e){
+    console.warn('renderAll error:', e);
+  }
+}
 function renderHeader(){
   const navP=document.getElementById('navPlayersCount');
   const navM=document.getElementById('navMatchesCount');
   if(navP)navP.textContent=state.players.length;
   if(navM)navM.textContent=state.matches.length;
-  document.getElementById('teamNameHead').textContent=state.teamName||'Mijn Team';
-  document.getElementById('teamNameInput').value=state.teamName||'';
+  const teamNameHead=document.getElementById('teamNameHead');
+  const teamNameInput=document.getElementById('teamNameInput');
+  if(teamNameHead)teamNameHead.textContent=state.teamName||'Mijn Team';
+  if(teamNameInput)teamNameInput.value=state.teamName||'';
 
   const logoBtn=document.getElementById('clubLogoButton');
   const logoImg=document.getElementById('clubLogoImage');
   const logoPlaceholder=document.getElementById('clubLogoPlaceholder');
-  if(state.clubLogo){
-    logoImg.src=state.clubLogo;
-    logoImg.hidden=false;
-    logoPlaceholder.hidden=true;
-    logoBtn.classList.add('has-logo');
-  }else{
-    logoImg.removeAttribute('src');
-    logoImg.hidden=true;
-    logoPlaceholder.hidden=false;
-    logoBtn.classList.remove('has-logo');
+  if(logoImg && logoPlaceholder && logoBtn){
+    if(state.clubLogo){
+      logoImg.src=state.clubLogo;
+      logoImg.hidden=false;
+      logoPlaceholder.hidden=true;
+      logoBtn.classList.add('has-logo');
+    }else{
+      logoImg.removeAttribute('src');
+      logoImg.hidden=true;
+      logoPlaceholder.hidden=false;
+      logoBtn.classList.remove('has-logo');
+    }
   }
 }
 document.getElementById('saveTeam')?.addEventListener('click',()=>{

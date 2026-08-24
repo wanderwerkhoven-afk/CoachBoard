@@ -2453,6 +2453,7 @@ header {
 }
 
 .auth-screen.hidden {
+  display: none !important;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;

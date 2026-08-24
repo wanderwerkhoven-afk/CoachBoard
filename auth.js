@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // auth.js — CoachBoard Firebase Authentication & Cloud Sync
 // ============================================================
 import {
@@ -35,6 +35,7 @@ function showMainApp() {
   const mainApp    = document.getElementById("mainApp");
   if (authScreen) authScreen.classList.add("hidden");
   if (mainApp)    mainApp.style.display = "";
+  if (window.renderAll) window.renderAll();
 }
 
 // ─── Cloud Sync: Load & Listen per User ───────────────────────
