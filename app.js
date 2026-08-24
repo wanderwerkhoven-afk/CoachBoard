@@ -2608,43 +2608,200 @@ function movePlayerToPosition(half,pid,targetPos){
   saveState();renderMatchDetail();
 }
 
-function attachDrag(el){
-  el.addEventListener('pointerdown',e=>{
+// ── Hold-to-drag helpers ──────────────────────────────────────────────────
+// A token activates drag only after 200 ms of continuous hold.
+// While dragging the clone follows the finger; the original becomes a ghost.
+// On drop inside the pitch the nearest position is used.
+
+const HOLD_MS = 200; // ms before drag activates
+
+let dragClone = null;       // the floating visual clone
+let ghostEl   = null;       // transparent placeholder at origin
+
+function _startDragVisual(el, clientX, clientY) {
+  // Vibrate for tactile feedback (mobile)
+  if (navigator.vibrate) navigator.vibrate(30);
+
+  // Build a clone that floats above everything
+  const rect = el.getBoundingClientRect();
+  dragClone = el.cloneNode(true);
+  dragClone.style.cssText = `
+    position: fixed;
+    left: ${rect.left}px;
+    top:  ${rect.top}px;
+    width: ${rect.width}px;
+    pointer-events: none;
+    z-index: 9999;
+    margin: 0;
+    transform: translate(0,0) scale(1.13);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.38);
+    opacity: 0.95;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    border-radius: 8px;
+  `;
+  document.body.appendChild(dragClone);
+
+  // Make the original a ghost
+  el.classList.add('drag-ghost');
+
+  // Store offset from touch point to element centre
+  dragState._offsetX = clientX - (rect.left + rect.width  / 2);
+  dragState._offsetY = clientY - (rect.top  + rect.height / 2);
+  dragState._cloneW  = rect.width;
+  dragState._cloneH  = rect.height;
+  dragState.active   = true;
+}
+
+function _moveDragClone(clientX, clientY) {
+  if (!dragClone || !dragState?.active) return;
+  const hw = dragState._cloneW / 2;
+  const hh = dragState._cloneH / 2;
+  dragClone.style.left = (clientX - dragState._offsetX - hw) + 'px';
+  dragClone.style.top  = (clientY - dragState._offsetY - hh) + 'px';
+}
+
+function _endDrag(clientX, clientY) {
+  if (!dragState) return;
+
+  const holdTimer = dragState._holdTimer;
+  clearTimeout(holdTimer);
+
+  if (dragState.active) {
+    // Remove clone and ghost
+    if (dragClone) { dragClone.remove(); dragClone = null; }
+    dragState.el?.classList.remove('drag-ghost', 'dragging');
+
+    // Determine drop target
+    const pitchId = dragState.half === 1 ? 'pitch1' : 'pitch2';
+    const pitch   = document.getElementById(pitchId);
+    const rect    = pitch.getBoundingClientRect();
+
+    if (clientX >= rect.left && clientX <= rect.right &&
+        clientY >= rect.top  && clientY <= rect.bottom) {
+      const pos = findNearestPosition(pitch, clientX, clientY);
+      // Flash the target slot
+      const slots = pitch.querySelectorAll('.slot');
+      slots.forEach(s => { if (+s.dataset.pos === pos) s.classList.add('slot-flash'); });
+      setTimeout(() => slots.forEach(s => s.classList.remove('slot-flash')), 350);
+
+      movePlayerToPosition(dragState.half, dragState.pid, pos);
+    }
+  } else {
+    // Hold didn't complete – was a tap, not drag; nothing to clean up
+    dragState.el?.classList.remove('dragging');
+  }
+
+  dragState = null;
+}
+
+function attachDrag(el) {
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return; // left-click only for mouse
     e.preventDefault();
     el.setPointerCapture?.(e.pointerId);
-    el.classList.add('dragging');
-    dragState={pid:el.dataset.pid,half:getPitchHalfFromId(el.dataset.pitch),el};
+
+    el.classList.add('hold-ripple');
+    const startX = e.clientX, startY = e.clientY;
+
+    dragState = {
+      pid:  el.dataset.pid,
+      half: getPitchHalfFromId(el.dataset.pitch),
+      el,
+      active: false,
+      _startX: startX,
+      _startY: startY,
+      _holdTimer: setTimeout(() => _startDragVisual(el, e.clientX, e.clientY), HOLD_MS)
+    };
   });
-  el.addEventListener('pointerup',e=>{
-    if(!dragState)return;
-    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
-    const rect=pitch.getBoundingClientRect();
-    if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
-      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
-      movePlayerToPosition(dragState.half,dragState.pid,pos);
+
+  el.addEventListener('pointermove', e => {
+    if (!dragState || dragState.el !== el) return;
+    if (!dragState.active) {
+      // Cancel hold if finger moved more than 8px (user is scrolling)
+      const dx = e.clientX - dragState._startX;
+      const dy = e.clientY - dragState._startY;
+      if (Math.sqrt(dx*dx + dy*dy) > 8) {
+        clearTimeout(dragState._holdTimer);
+        el.classList.remove('hold-ripple');
+        dragState = null;
+      }
+      return;
     }
-    dragState.el?.classList.remove('dragging');dragState=null;
+    e.preventDefault();
+    _moveDragClone(e.clientX, e.clientY);
+  });
+
+  el.addEventListener('pointerup', e => {
+    el.classList.remove('hold-ripple');
+    if (!dragState || dragState.el !== el) return;
+    _endDrag(e.clientX, e.clientY);
+  });
+
+  el.addEventListener('pointercancel', e => {
+    el.classList.remove('hold-ripple');
+    if (!dragState || dragState.el !== el) return;
+    clearTimeout(dragState._holdTimer);
+    if (dragClone) { dragClone.remove(); dragClone = null; }
+    dragState.el?.classList.remove('drag-ghost', 'dragging');
+    dragState = null;
   });
 }
 
-function attachBenchDrag(el){
-  el.addEventListener('pointerdown',e=>{
+function attachBenchDrag(el) {
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
     e.preventDefault();
     el.setPointerCapture?.(e.pointerId);
-    el.classList.add('dragging');
-    dragState={pid:el.dataset.pid,half:+el.dataset.half,el,fromBench:true};
+
+    el.classList.add('hold-ripple');
+    const startX = e.clientX, startY = e.clientY;
+
+    dragState = {
+      pid:       el.dataset.pid,
+      half:      +el.dataset.half,
+      el,
+      fromBench: true,
+      active:    false,
+      _startX:   startX,
+      _startY:   startY,
+      _holdTimer: setTimeout(() => _startDragVisual(el, e.clientX, e.clientY), HOLD_MS)
+    };
   });
-  el.addEventListener('pointerup',e=>{
-    if(!dragState)return;
-    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
-    const rect=pitch.getBoundingClientRect();
-    if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
-      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
-      movePlayerToPosition(dragState.half,dragState.pid,pos);
+
+  el.addEventListener('pointermove', e => {
+    if (!dragState || dragState.el !== el) return;
+    if (!dragState.active) {
+      const dx = e.clientX - dragState._startX;
+      const dy = e.clientY - dragState._startY;
+      if (Math.sqrt(dx*dx + dy*dy) > 8) {
+        clearTimeout(dragState._holdTimer);
+        el.classList.remove('hold-ripple');
+        dragState = null;
+      }
+      return;
     }
-    dragState.el?.classList.remove('dragging');dragState=null;
+    e.preventDefault();
+    _moveDragClone(e.clientX, e.clientY);
+  });
+
+  el.addEventListener('pointerup', e => {
+    el.classList.remove('hold-ripple');
+    if (!dragState || dragState.el !== el) return;
+    _endDrag(e.clientX, e.clientY);
+  });
+
+  el.addEventListener('pointercancel', e => {
+    el.classList.remove('hold-ripple');
+    if (!dragState || dragState.el !== el) return;
+    clearTimeout(dragState._holdTimer);
+    if (dragClone) { dragClone.remove(); dragClone = null; }
+    dragState.el?.classList.remove('drag-ghost', 'dragging');
+    dragState = null;
   });
 }
+
+
+
 
 function restoreGenerated(half){
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;

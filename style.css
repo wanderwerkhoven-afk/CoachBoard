@@ -915,12 +915,56 @@ header {
   color: #ffffff !important;
 }
 
+/* ── Drag ghost: original token fades out while clone floats ── */
+.pitch .player.drag-ghost {
+  opacity: 0.25 !important;
+  transform: translate(-50%, -50%) scale(0.92) !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  filter: blur(0.5px);
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+/* Legacy dragging class kept for safety */
 .pitch .player.dragging {
   opacity: 0.85;
   transform: translate(-50%, -50%) scale(1.12) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important;
   z-index: 50 !important;
 }
+
+/* ── Bench chip ghost while dragging ── */
+.bench-chip.drag-ghost {
+  opacity: 0.25 !important;
+  transform: scale(0.92) !important;
+  pointer-events: none !important;
+  filter: blur(0.5px);
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+/* ── Slot flash on drop ── */
+@keyframes slotFlash {
+  0%   { background: rgba(217, 27, 36, 0.55); border-color: #d91b24; }
+  60%  { background: rgba(217, 27, 36, 0.25); border-color: #d91b24; }
+  100% { background: rgba(0,0,0,0.08);        border-color: rgba(255,255,255,0.65); }
+}
+
+.pitch .slot.slot-flash {
+  animation: slotFlash 0.35s ease forwards !important;
+}
+
+/* ── Hold ripple: subtle pulse on the token while the 200ms hold is counting ── */
+@keyframes holdRipple {
+  0%   { box-shadow: 0 0 0 0   rgba(217, 27, 36, 0.55); }
+  70%  { box-shadow: 0 0 0 12px rgba(217, 27, 36, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(217, 27, 36, 0); }
+}
+
+.pitch .player.hold-ripple,
+.bench-chip.hold-ripple {
+  animation: holdRipple 0.3s ease-out infinite;
+}
+
 
 /* Bench Panel */
 .lineup-bench-panel {
