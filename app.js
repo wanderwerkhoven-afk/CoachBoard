@@ -4685,15 +4685,10 @@ document.querySelectorAll('.btn-toggle-pwd').forEach(btn => {
 
     const isPassword = input.type === 'password';
     input.type = isPassword ? 'text' : 'password';
-
-    const iconEye = btn.querySelector('.icon-eye');
-    const iconEyeOff = btn.querySelector('.icon-eye-off');
-    if(iconEye && iconEyeOff){
-      iconEye.hidden = isPassword;
-      iconEyeOff.hidden = !isPassword;
-    }
+    btn.classList.toggle('active', isPassword);
   });
 });
+
 
 // Initialize auth check on load
 checkAuthStatus();
