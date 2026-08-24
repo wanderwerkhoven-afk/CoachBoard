@@ -1,0 +1,30 @@
+﻿{
+  "name": "CoachBoard",
+  "short_name": "CoachBoard",
+  "description": "Voetbal coach app voor teamopstellingen en wedstrijdbeheer",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f5f9",
+  "theme_color": "#c62828",
+  "icons": [
+    {
+      "src": "coachboard-football-icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "coachboard-football-icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "coachboard-football-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

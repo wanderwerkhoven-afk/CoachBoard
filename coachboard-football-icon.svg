@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">CoachBoard football app icon</title>
+  <desc id="desc">A bold football in front of a green coach tactics board on a midnight blue background.</desc>
+
+  <defs>
+    <clipPath id="ball-clip">
+      <circle cx="662" cy="682" r="202"/>
+    </clipPath>
+  </defs>
+
+  <!-- Edge-to-edge app background; platforms may apply their own corner mask. -->
+  <rect width="1024" height="1024" fill="#09182E"/>
+
+  <!-- Coach clipboard / football tactics board. -->
+  <rect x="144" y="112" width="736" height="800" rx="112" fill="#21C063"/>
+  <rect x="214" y="188" width="596" height="646" rx="30" fill="none" stroke="#F7FAF5" stroke-width="22"/>
+  <path d="M214 511H810" fill="none" stroke="#F7FAF5" stroke-width="22"/>
+  <circle cx="512" cy="511" r="88" fill="none" stroke="#F7FAF5" stroke-width="22"/>
+  <path d="M384 112V88C384 53 412 25 447 25H577C612 25 640 53 640 88V112" fill="#F7FAF5"/>
+  <rect x="430" y="63" width="164" height="72" rx="36" fill="#09182E"/>
+
+  <!-- Small tactical route: clean enough to remain readable at app-icon size. -->
+  <circle cx="326" cy="332" r="34" fill="#F7FAF5"/>
+  <circle cx="571" cy="304" r="34" fill="#F7FAF5"/>
+  <path d="M368 329C432 322 478 318 529 308" fill="none" stroke="#F7FAF5" stroke-width="20" stroke-linecap="round" stroke-dasharray="22 24"/>
+  <path d="M500 291L536 306L507 330" fill="none" stroke="#F7FAF5" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Large, unmistakable football. -->
+  <circle cx="662" cy="682" r="214" fill="#09182E"/>
+  <circle cx="662" cy="682" r="190" fill="#F7FAF5"/>
+  <g clip-path="url(#ball-clip)" fill="#09182E" stroke="#09182E" stroke-linejoin="round">
+    <!-- Central pentagon and five clean seam routes. -->
+    <path d="M662 602L738 658L709 748H615L586 658Z" stroke-width="6"/>
+    <path d="M662 602L662 514M738 658L813 612M709 748L758 826M615 748L566 826M586 658L511 612" fill="none" stroke-width="20" stroke-linecap="round"/>
+
+    <!-- Simplified edge panels: unmistakably a football without visual clutter. -->
+    <path d="M620 495L662 472L704 495L690 534H634Z" stroke-width="6"/>
+    <path d="M812 568L856 607L846 657L806 653L782 611Z" stroke-width="6"/>
+    <path d="M799 808L774 856L727 878L704 842L735 809Z" stroke-width="6"/>
+    <path d="M525 808L550 856L597 878L620 842L589 809Z" stroke-width="6"/>
+    <path d="M512 568L468 607L478 657L518 653L542 611Z" stroke-width="6"/>
+  </g>
+  <circle cx="662" cy="682" r="190" fill="none" stroke="#F7FAF5" stroke-width="12"/>
+</svg>
