@@ -3893,14 +3893,18 @@ function findHalfCaptureElement(half){
 }
 
 async function copyHalfAsImage(half,button){
+  const originalText = button.innerHTML;
   try{
     const target=findHalfCaptureElement(half);
     if(!target)throw new Error('Opstelling niet gevonden.');
 
+    button.disabled = true;
+    button.innerHTML = '⏳ Bezig...';
+
     const html2canvas=await ensureHtml2Canvas();
 
-    // Hide action controls only while the screenshot is generated.
-    const controls=target.querySelectorAll('button,select');
+    // Verberg actieknoppen tijdens renderen van de afbeelding
+    const controls=target.querySelectorAll('button,select,.lineup-toolbar');
     const old=[];
     controls.forEach(el=>{
       old.push([el,el.style.visibility]);
@@ -3909,7 +3913,7 @@ async function copyHalfAsImage(half,button){
 
     const canvas=await html2canvas(target,{
       backgroundColor:'#ffffff',
-      scale:2,
+      scale: window.devicePixelRatio && window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
       useCORS:true,
       logging:false
     });
@@ -3919,28 +3923,74 @@ async function copyHalfAsImage(half,button){
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     if(!blob)throw new Error('Afbeelding kon niet worden gemaakt.');
 
+    // 1. Probeer moderne async Clipboard API (ClipboardItem met image/png)
+    let copiedToClipboard = false;
     if(navigator.clipboard && window.ClipboardItem){
-      await navigator.clipboard.write([
-        new ClipboardItem({'image/png':blob})
-      ]);
-      const original=button.innerHTML;
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({'image/png':blob})
+        ]);
+        copiedToClipboard = true;
+      } catch(clipErr) {
+        console.warn('Clipboard write failed, trying share/download fallback', clipErr);
+      }
+    }
+
+    if(copiedToClipboard){
       button.innerHTML='✓ Afbeelding gekopieerd';
       button.classList.add('copied');
       setTimeout(()=>{
-        button.innerHTML=original;
+        button.innerHTML=originalText;
         button.classList.remove('copied');
-      },1800);
-    }else{
-      // Fallback for browsers that do not support image clipboard.
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=`opstelling-${half}e-helft.png`;
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
+        button.disabled = false;
+      },2000);
+      return;
     }
+
+    // 2. Als klembord geblokkeerd is (zoals in iOS Safari / PWA homescreen), probeer Web Share API
+    const file = new File([blob], `opstelling-${half}e-helft.png`, { type: 'image/png' });
+    if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+      try {
+        await navigator.share({
+          title: `Opstelling ${half}e helft`,
+          files: [file]
+        });
+        button.innerHTML='✓ Gedeeld / Opgeslagen';
+        setTimeout(()=>{
+          button.innerHTML=originalText;
+          button.disabled = false;
+        },2000);
+        return;
+      } catch(shareErr) {
+        if(shareErr.name === 'AbortError') {
+          button.innerHTML=originalText;
+          button.disabled = false;
+          return;
+        }
+      }
+    }
+
+    // 3. Fallback: directe download / openen van afbeelding
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`opstelling-${half}e-helft.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+
+    button.innerHTML='✓ Afbeelding gedownload';
+    setTimeout(()=>{
+      button.innerHTML=originalText;
+      button.disabled = false;
+    },2000);
+
   }catch(err){
-    alert('Kopiëren van de afbeelding lukt in deze browser niet. Probeer Chrome, Edge of Safari met klembordtoegang.');
+    console.error('Error copying lineup image:', err);
+    button.innerHTML=originalText;
+    button.disabled = false;
+    alert('Het maken van de afbeelding is niet gelukt. Probeer het opnieuw.');
   }
 }
 
@@ -3954,13 +4004,16 @@ document.addEventListener('click',e=>{
 
 
 async function copyPreviewHalfAsImage(half,button){
+  const originalText = button.innerHTML;
   try{
     const card=document.querySelector(`[data-preview-card="${half}"]`);
     if(!card)throw new Error('Opstelling niet gevonden.');
 
+    button.disabled = true;
+    button.innerHTML = '⏳ Bezig...';
+
     const html2canvas=await ensureHtml2Canvas();
 
-    // Hide only preview control buttons during capture.
     const controls=card.querySelectorAll('button');
     const previous=[];
     controls.forEach(el=>{
@@ -3970,7 +4023,7 @@ async function copyPreviewHalfAsImage(half,button){
 
     const canvas=await html2canvas(card,{
       backgroundColor:'#ffffff',
-      scale:2,
+      scale: window.devicePixelRatio && window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
       useCORS:true,
       logging:false
     });
@@ -3980,25 +4033,69 @@ async function copyPreviewHalfAsImage(half,button){
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     if(!blob)throw new Error('Afbeelding kon niet worden gemaakt.');
 
+    let copiedToClipboard = false;
     if(navigator.clipboard && window.ClipboardItem){
-      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
-      const original=button.innerHTML;
+      try {
+        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        copiedToClipboard = true;
+      } catch(clipErr) {
+        console.warn('Clipboard write failed, trying share/download fallback', clipErr);
+      }
+    }
+
+    if(copiedToClipboard){
       button.innerHTML='✓ Afbeelding gekopieerd';
       button.classList.add('copied');
       setTimeout(()=>{
-        button.innerHTML=original;
+        button.innerHTML=originalText;
         button.classList.remove('copied');
-      },1800);
-    }else{
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=`opstelling-${half}e-helft.png`;
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
+        button.disabled = false;
+      },2000);
+      return;
     }
+
+    const file = new File([blob], `opstelling-${half}e-helft.png`, { type: 'image/png' });
+    if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+      try {
+        await navigator.share({
+          title: `Opstelling ${half}e helft`,
+          files: [file]
+        });
+        button.innerHTML='✓ Gedeeld / Opgeslagen';
+        setTimeout(()=>{
+          button.innerHTML=originalText;
+          button.disabled = false;
+        },2000);
+        return;
+      } catch(shareErr) {
+        if(shareErr.name === 'AbortError') {
+          button.innerHTML=originalText;
+          button.disabled = false;
+          return;
+        }
+      }
+    }
+
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`opstelling-${half}e-helft.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+
+    button.innerHTML='✓ Afbeelding gedownload';
+    setTimeout(()=>{
+      button.innerHTML=originalText;
+      button.disabled = false;
+    },2000);
+
   }catch(err){
-    alert('Kopiëren van de afbeelding lukt in deze browser niet. Probeer Chrome, Edge of Safari met klembordtoegang.');
+    console.error('Error copying lineup preview image:', err);
+    button.innerHTML=originalText;
+    button.disabled = false;
+    alert('Het maken van de afbeelding is niet gelukt. Probeer het opnieuw.');
   }
 }
 
@@ -4009,6 +4106,7 @@ document.addEventListener('click',e=>{
   e.stopPropagation();
   copyPreviewHalfAsImage(Number(btn.dataset.copyPreviewHalf),btn);
 });
+
 
 
 document.getElementById('closePlayerEdit')?.addEventListener('click',closePlayerEdit);
