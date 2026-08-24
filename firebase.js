@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// firebase.js — CoachBoard Firebase initialization
+// firebase.js — CoachBoard Firebase initialization & Firestore
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
@@ -12,6 +12,13 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAxU2UG4_Ksq-fsA96Vu3Nuw7y6eB5DtHM",
@@ -25,6 +32,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export {
@@ -33,5 +41,9 @@ export {
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
-  signInWithPopup
+  signInWithPopup,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
 };

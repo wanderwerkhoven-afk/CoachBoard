@@ -1,16 +1,26 @@
-// ============================================================
-// auth.js — CoachBoard Firebase Authentication controller
+﻿// ============================================================
+// auth.js — CoachBoard Firebase Authentication & Cloud Sync
 // ============================================================
 import {
   auth,
+  db,
   googleProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
 } from "./firebase.js";
+
+let currentUser = null;
+let unsubscribeFirestore = null;
+let isApplyingCloudUpdate = false;
+let cloudSyncTimeout = null;
 
 // ─── UI helpers ──────────────────────────────────────────────
 function showAuthScreen() {
@@ -27,11 +37,88 @@ function showMainApp() {
   if (mainApp)    mainApp.style.display = "";
 }
 
-// ─── Auth state listener (runs on every page load) ───────────
+// ─── Cloud Sync: Load & Listen per User ───────────────────────
+async function initUserFirestoreData(user) {
+  if (!user) return;
+  currentUser = user;
+
+  // Unsubscribe previous listener if any
+  if (unsubscribeFirestore) {
+    unsubscribeFirestore();
+    unsubscribeFirestore = null;
+  }
+
+  const userDocRef = doc(db, "users", user.uid);
+
+  try {
+    const docSnap = await getDoc(userDocRef);
+
+    if (docSnap.exists() && docSnap.data()?.coachboardState) {
+      // User already has data in Firestore: load it into the app
+      const cloudData = docSnap.data().coachboardState;
+      isApplyingCloudUpdate = true;
+      window.setCoachBoardState?.(cloudData);
+      isApplyingCloudUpdate = false;
+    } else {
+      // Brand new user or no cloud data yet: migrate current local data or defaults to Firestore
+      const currentState = window.getCoachBoardState?.() || window.defaultState?.();
+      if (currentState) {
+        await setDoc(userDocRef, {
+          email: user.email,
+          updatedAt: new Date().toISOString(),
+          coachboardState: currentState
+        }, { merge: true });
+      }
+    }
+
+    // Real-time listener for multi-device sync
+    unsubscribeFirestore = onSnapshot(userDocRef, (snapshot) => {
+      if (isApplyingCloudUpdate) return;
+      if (snapshot.exists() && snapshot.data()?.coachboardState) {
+        const cloudState = snapshot.data().coachboardState;
+        isApplyingCloudUpdate = true;
+        window.setCoachBoardState?.(cloudState);
+        isApplyingCloudUpdate = false;
+      }
+    }, (err) => {
+      console.warn("Firestore snapshot listener error:", err);
+    });
+
+  } catch (err) {
+    console.error("Fout bij ophalen gebruikersdata uit Firestore:", err);
+  }
+}
+
+// ─── Cloud Sync: Save State to Firestore ──────────────────────
+window.syncStateToCloud = function(state) {
+  if (!currentUser || isApplyingCloudUpdate) return;
+
+  clearTimeout(cloudSyncTimeout);
+  cloudSyncTimeout = setTimeout(async () => {
+    try {
+      const userDocRef = doc(db, "users", currentUser.uid);
+      await setDoc(userDocRef, {
+        email: currentUser.email,
+        updatedAt: new Date().toISOString(),
+        coachboardState: state
+      }, { merge: true });
+    } catch (err) {
+      console.error("Fout bij opslaan naar Firestore:", err);
+    }
+  }, 400); // 400ms debounce
+};
+
+// ─── Auth state listener ─────────────────────────────────────
 onAuthStateChanged(auth, (user) => {
   if (user) {
+    initUserFirestoreData(user);
     showMainApp();
   } else {
+    currentUser = null;
+    if (unsubscribeFirestore) {
+      unsubscribeFirestore();
+      unsubscribeFirestore = null;
+    }
     showAuthScreen();
   }
 });
@@ -79,8 +166,8 @@ async function handleGoogleSignIn(e) {
     const name = result.user.displayName || result.user.email;
     window.showToast?.(`Welkom, ${name}!`, "success");
   } catch (err) {
-    if (err.code === "auth/popup-closed-by-user") return; // gebruiker sloot popup, geen fout tonen
-    window.showToast?.(firebaseErrorMessage(err.code), "error");
+    if (err.code === "auth/popup-closed-by-user") return;
+    window.showToast?.(firebaseErrorMessage(err.code), "error", 4500);
   }
 }
 
@@ -115,7 +202,7 @@ async function handleSignUp(e) {
     if (repeatInput) repeatInput.value = "";
     window.showToast?.("Account aangemaakt! Welkom bij CoachBoard.", "success");
   } catch (err) {
-    window.showToast?.(firebaseErrorMessage(err.code), "error");
+    window.showToast?.(firebaseErrorMessage(err.code), "error", 4500);
   }
 }
 
@@ -147,7 +234,7 @@ async function handleForgotPassword(e) {
     await sendPasswordResetEmail(auth, email);
     window.showToast?.(`Wachtwoord reset e-mail verstuurd naar ${email}.`, "success", 5000);
   } catch (err) {
-    window.showToast?.(firebaseErrorMessage(err.code), "error");
+    window.showToast?.(firebaseErrorMessage(err.code), "error", 4500);
   }
 }
 
@@ -156,9 +243,8 @@ function firebaseErrorMessage(code) {
   switch (code) {
     case "auth/user-not-found":
     case "auth/invalid-credential":
-      return "E-mailadres of wachtwoord is onjuist.";
     case "auth/wrong-password":
-      return "Het wachtwoord is incorrect.";
+      return "E-mailadres of wachtwoord is onjuist.";
     case "auth/email-already-in-use":
       return "Dit e-mailadres is al in gebruik.";
     case "auth/invalid-email":
@@ -166,14 +252,14 @@ function firebaseErrorMessage(code) {
     case "auth/weak-password":
       return "Wachtwoord is te kort. Gebruik minimaal 6 tekens.";
     case "auth/too-many-requests":
-      return "Te veel pogingen. Probeer het later opnieuw.";
+      return "Te veel mislukte pogingen. Probeer het later opnieuw.";
     case "auth/network-request-failed":
       return "Geen internetverbinding. Controleer je netwerk.";
     case "auth/cancelled-popup-request":
     case "auth/popup-blocked":
-      return "Google popup geblokkeerd door de browser. Sta popups toe en probeer opnieuw.";
+      return "Google popup geblokkeerd door de browser. Sta popups toe.";
     default:
-      return `Er is een fout opgetreden (${code}).`;
+      return `Inloggen mislukt: ${code || "onbekende fout"}`;
   }
 }
 
