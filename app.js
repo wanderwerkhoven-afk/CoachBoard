@@ -3925,80 +3925,178 @@ async function ensureHtml2Canvas(){
   });
 }
 
-function findHalfCaptureElement(half){
-  const btn=document.querySelector(`[data-copy-half="${half}"]`);
-  if(!btn)return null;
+function buildExportNodeForHalf(half, isPreview=false){
+  const m = state.matches.find(x => x.id === activeMatchId);
+  if(!m) return null;
 
-  // Capture the visual half section: field + its substitutes, excluding the heading controls.
-  let node=btn.parentElement;
-  while(node && node!==document.body){
-    const text=node.textContent||'';
-    const hasField=node.querySelector?.('.pitch,.football-field,.lineup-field,[class*="pitch"],[class*="field"]');
-    const hasHalf=text.includes(`${half}e helft`);
-    if(hasField && hasHalf)return node;
-    node=node.parentElement;
+  const lineup = half === 1 ? m.lineup1 : m.lineup2;
+  const benchIds = getLineupBenchIds ? getLineupBenchIds(m, lineup) : [];
+  const benchPlayers = benchIds.map(id => state.players.find(p => p.id === id)).filter(Boolean);
+
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'fixed';
+  wrapper.style.left = '-9999px';
+  wrapper.style.top = '-9999px';
+  wrapper.style.width = '800px';
+  wrapper.style.background = '#ffffff';
+  wrapper.style.padding = '24px';
+  wrapper.style.borderRadius = '16px';
+  wrapper.style.fontFamily = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  wrapper.style.color = '#0f172a';
+  wrapper.style.boxSizing = 'border-box';
+
+  const clubName = state.teamName || 'CoachBoard';
+  const matchTitle = fullMatchTitle(m);
+  const matchMeta = `${formatDateNL(m.date)} · ${m.time || ''} · ${m.homeAway || ''}`;
+
+  let benchHtml = '';
+  if(benchPlayers.length){
+    benchHtml = `
+      <div style="margin-top:16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;">
+        <div style="font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:8px;">
+          Wisselspelers (${benchPlayers.length})
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${benchPlayers.map(p => {
+            const bg = p.level === 1 ? '#d1fae5' : p.level === 2 ? '#fef3c7' : '#fee2e2';
+            const color = p.level === 1 ? '#047857' : p.level === 2 ? '#b45309' : '#8e1017';
+            return `<span style="display:inline-flex;align-items:center;gap:6px;background:${bg};color:${color};font-weight:700;font-size:13px;padding:6px 12px;border-radius:9999px;border:1px solid rgba(0,0,0,0.06);">${esc(p.name)} · N${p.level}</span>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
   }
 
-  // Fallback: nearest section/card around the button.
-  return btn.closest('section,.card,[class*="half"]') || btn.parentElement?.nextElementSibling;
+  wrapper.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:2px solid #f1f5f9;padding-bottom:12px;">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#0f172a;line-height:1.2;">${esc(matchTitle)}</div>
+        <div style="font-size:13.5px;color:#64748b;font-weight:600;margin-top:2px;">${esc(matchMeta)} · ${esc(clubName)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#d91b24;">${half}e helft</div>
+        <div style="font-size:12.5px;color:#64748b;font-weight:600;">${half === 1 ? '0–35 min' : '35–70 min'}</div>
+      </div>
+    </div>
+    <div class="pitch" id="exportPitchCanvas" style="width:100%;aspect-ratio:1700/1120;position:relative;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.15);overflow:hidden;border:2px solid rgba(255,255,255,0.85);"></div>
+    ${benchHtml}
+  `;
+
+  document.body.appendChild(wrapper);
+
+  const pitchEl = wrapper.querySelector('#exportPitchCanvas');
+  const xy = (m.formation || '4-3-3') === '4-4-2' ? XY442 : XY433;
+
+  Object.keys(xy).forEach(pos => {
+    const s = document.createElement('div');
+    s.style.position = 'absolute';
+    s.style.transform = 'translate(-50%, -50%)';
+    s.style.width = '64px';
+    s.style.height = '38px';
+    s.style.border = '2px dashed rgba(255,255,255,0.65)';
+    s.style.borderRadius = '9999px';
+    s.style.background = 'rgba(0,0,0,0.08)';
+    s.style.left = xy[pos][0] + '%';
+    s.style.top = xy[pos][1] + '%';
+    pitchEl.appendChild(s);
+  });
+
+  Object.entries(lineup || {}).forEach(([pos, pid]) => {
+    const p = state.players.find(x => x.id === pid);
+    if(!p || !xy[pos]) return;
+
+    const d = document.createElement('div');
+    d.style.position = 'absolute';
+    d.style.transform = 'translate(-50%, -50%)';
+    d.style.padding = '6px 12px';
+    d.style.borderRadius = '10px';
+    d.style.border = '1.5px solid rgba(0,0,0,0.12)';
+    d.style.boxShadow = '0 4px 10px rgba(0,0,0,0.22)';
+    d.style.fontFamily = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif";
+    d.style.fontSize = '13.5px';
+    d.style.fontWeight = '800';
+    d.style.background = '#ffffff';
+    d.style.color = '#0f172a';
+    d.style.whiteSpace = 'nowrap';
+    d.style.display = 'flex';
+    d.style.alignItems = 'center';
+    d.style.gap = '8px';
+    d.style.zIndex = '10';
+    d.style.left = xy[pos][0] + '%';
+    d.style.top = xy[pos][1] + '%';
+
+    const badge = document.createElement('span');
+    badge.style.width = '24px';
+    badge.style.height = '24px';
+    badge.style.borderRadius = '7px';
+    badge.style.display = 'inline-flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
+    badge.style.fontFamily = "'Chakra Petch', monospace";
+    badge.style.fontWeight = '700';
+    badge.style.fontSize = '13px';
+    badge.style.color = '#ffffff';
+    badge.style.background = p.level === 1 ? 'linear-gradient(135deg, #22c55e, #16a34a)' :
+                             p.level === 2 ? 'linear-gradient(135deg, #f59e0b, #d97706)' :
+                                             'linear-gradient(135deg, #ea580c, #c2410c)';
+    badge.textContent = pos;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = (p.name || '').trim().split(/\s+/)[0] || p.name;
+
+    d.appendChild(badge);
+    d.appendChild(nameSpan);
+    pitchEl.appendChild(d);
+  });
+
+  return wrapper;
 }
 
-async function copyHalfAsImage(half,button){
+async function copyHalfAsImage(half, button){
   const originalText = button.innerHTML;
+  let exportWrapper = null;
   try{
-    const target=findHalfCaptureElement(half);
-    if(!target)throw new Error('Opstelling niet gevonden.');
-
     button.disabled = true;
     button.innerHTML = '⏳ Bezig...';
 
-    const html2canvas=await ensureHtml2Canvas();
+    const html2canvas = await ensureHtml2Canvas();
+    exportWrapper = buildExportNodeForHalf(half);
+    if(!exportWrapper) throw new Error('Opstelling niet gevonden.');
 
-    // Verberg actieknoppen tijdens renderen van de afbeelding
-    const controls=target.querySelectorAll('button,select,.lineup-toolbar');
-    const old=[];
-    controls.forEach(el=>{
-      old.push([el,el.style.visibility]);
-      el.style.visibility='hidden';
+    const canvas = await html2canvas(exportWrapper, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false
     });
 
-    const canvas=await html2canvas(target,{
-      backgroundColor:'#ffffff',
-      scale: window.devicePixelRatio && window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
-      useCORS:true,
-      logging:false
-    });
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if(!blob) throw new Error('Afbeelding kon niet worden gemaakt.');
 
-    old.forEach(([el,v])=>el.style.visibility=v);
-
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-    if(!blob)throw new Error('Afbeelding kon niet worden gemaakt.');
-
-    // 1. Probeer moderne async Clipboard API (ClipboardItem met image/png)
+    // 1. Probeer klembord
     let copiedToClipboard = false;
     if(navigator.clipboard && window.ClipboardItem){
       try {
-        await navigator.clipboard.write([
-          new ClipboardItem({'image/png':blob})
-        ]);
+        await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
         copiedToClipboard = true;
       } catch(clipErr) {
-        console.warn('Clipboard write failed, trying share/download fallback', clipErr);
+        console.warn('Clipboard write failed, fallback to share/download', clipErr);
       }
     }
 
     if(copiedToClipboard){
-      button.innerHTML='✓ Afbeelding gekopieerd';
+      button.innerHTML = '✓ Afbeelding gekopieerd';
       button.classList.add('copied');
-      setTimeout(()=>{
-        button.innerHTML=originalText;
+      showToast(`${half}e helft opstelling gekopieerd`, 'success');
+      setTimeout(() => {
+        button.innerHTML = originalText;
         button.classList.remove('copied');
         button.disabled = false;
-      },2000);
+      }, 2000);
       return;
     }
 
-    // 2. Als klembord geblokkeerd is (zoals in iOS Safari / PWA homescreen), probeer Web Share API
+    // 2. Probeer Web Share
     const file = new File([blob], `opstelling-${half}e-helft.png`, { type: 'image/png' });
     if(navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
       try {
@@ -4006,44 +4104,51 @@ async function copyHalfAsImage(half,button){
           title: `Opstelling ${half}e helft`,
           files: [file]
         });
-        button.innerHTML='✓ Gedeeld / Opgeslagen';
-        setTimeout(()=>{
-          button.innerHTML=originalText;
+        button.innerHTML = '✓ Gedeeld / Opgeslagen';
+        showToast(`${half}e helft opstelling gedeeld`, 'success');
+        setTimeout(() => {
+          button.innerHTML = originalText;
           button.disabled = false;
-        },2000);
+        }, 2000);
         return;
       } catch(shareErr) {
         if(shareErr.name === 'AbortError') {
-          button.innerHTML=originalText;
+          button.innerHTML = originalText;
           button.disabled = false;
           return;
         }
       }
     }
 
-    // 3. Fallback: directe download / openen van afbeelding
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`opstelling-${half}e-helft.png`;
+    // 3. Fallback download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `opstelling-${half}e-helft.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
 
-    button.innerHTML='✓ Afbeelding gedownload';
-    setTimeout(()=>{
-      button.innerHTML=originalText;
+    button.innerHTML = '✓ Afbeelding gedownload';
+    showToast(`${half}e helft opstelling gedownload`, 'success');
+    setTimeout(() => {
+      button.innerHTML = originalText;
       button.disabled = false;
-    },2000);
+    }, 2000);
 
   }catch(err){
     console.error('Error copying lineup image:', err);
-    button.innerHTML=originalText;
+    button.innerHTML = originalText;
     button.disabled = false;
-    alert('Het maken van de afbeelding is niet gelukt. Probeer het opnieuw.');
+    showToast('Kopiëren van afbeelding mislukt', 'error');
+  } finally {
+    if(exportWrapper && exportWrapper.parentElement){
+      exportWrapper.parentElement.removeChild(exportWrapper);
+    }
   }
 }
+
 
 document.addEventListener('click',e=>{
   const btn=e.target.closest('[data-copy-half]');
@@ -4056,38 +4161,29 @@ document.addEventListener('click',e=>{
 
 async function copyPreviewHalfAsImage(half,button){
   const originalText = button.innerHTML;
+  let exportWrapper = null;
   try{
-    const card=document.querySelector(`[data-preview-card="${half}"]`);
-    if(!card)throw new Error('Opstelling niet gevonden.');
-
     button.disabled = true;
     button.innerHTML = '⏳ Bezig...';
 
-    const html2canvas=await ensureHtml2Canvas();
+    const html2canvas = await ensureHtml2Canvas();
+    exportWrapper = buildExportNodeForHalf(half, true);
+    if(!exportWrapper) throw new Error('Opstelling niet gevonden.');
 
-    const controls=card.querySelectorAll('button');
-    const previous=[];
-    controls.forEach(el=>{
-      previous.push([el,el.style.visibility]);
-      el.style.visibility='hidden';
+    const canvas = await html2canvas(exportWrapper, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false
     });
 
-    const canvas=await html2canvas(card,{
-      backgroundColor:'#ffffff',
-      scale: window.devicePixelRatio && window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
-      useCORS:true,
-      logging:false
-    });
-
-    previous.forEach(([el,v])=>el.style.visibility=v);
-
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-    if(!blob)throw new Error('Afbeelding kon niet worden gemaakt.');
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if(!blob) throw new Error('Afbeelding kon niet worden gemaakt.');
 
     let copiedToClipboard = false;
     if(navigator.clipboard && window.ClipboardItem){
       try {
-        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
         copiedToClipboard = true;
       } catch(clipErr) {
         console.warn('Clipboard write failed, trying share/download fallback', clipErr);
@@ -4095,13 +4191,14 @@ async function copyPreviewHalfAsImage(half,button){
     }
 
     if(copiedToClipboard){
-      button.innerHTML='✓ Afbeelding gekopieerd';
+      button.innerHTML = '✓ Afbeelding gekopieerd';
       button.classList.add('copied');
-      setTimeout(()=>{
-        button.innerHTML=originalText;
+      showToast(`${half}e helft opstelling gekopieerd`, 'success');
+      setTimeout(() => {
+        button.innerHTML = originalText;
         button.classList.remove('copied');
         button.disabled = false;
-      },2000);
+      }, 2000);
       return;
     }
 
@@ -4112,43 +4209,50 @@ async function copyPreviewHalfAsImage(half,button){
           title: `Opstelling ${half}e helft`,
           files: [file]
         });
-        button.innerHTML='✓ Gedeeld / Opgeslagen';
-        setTimeout(()=>{
-          button.innerHTML=originalText;
+        button.innerHTML = '✓ Gedeeld / Opgeslagen';
+        showToast(`${half}e helft opstelling gedeeld`, 'success');
+        setTimeout(() => {
+          button.innerHTML = originalText;
           button.disabled = false;
-        },2000);
+        }, 2000);
         return;
       } catch(shareErr) {
         if(shareErr.name === 'AbortError') {
-          button.innerHTML=originalText;
+          button.innerHTML = originalText;
           button.disabled = false;
           return;
         }
       }
     }
 
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`opstelling-${half}e-helft.png`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `opstelling-${half}e-helft.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
 
-    button.innerHTML='✓ Afbeelding gedownload';
-    setTimeout(()=>{
-      button.innerHTML=originalText;
+    button.innerHTML = '✓ Afbeelding gedownload';
+    showToast(`${half}e helft opstelling gedownload`, 'success');
+    setTimeout(() => {
+      button.innerHTML = originalText;
       button.disabled = false;
-    },2000);
+    }, 2000);
 
   }catch(err){
     console.error('Error copying lineup preview image:', err);
-    button.innerHTML=originalText;
+    button.innerHTML = originalText;
     button.disabled = false;
-    alert('Het maken van de afbeelding is niet gelukt. Probeer het opnieuw.');
+    showToast('Kopiëren van afbeelding mislukt', 'error');
+  } finally {
+    if(exportWrapper && exportWrapper.parentElement){
+      exportWrapper.parentElement.removeChild(exportWrapper);
+    }
   }
 }
+
 
 document.addEventListener('click',e=>{
   const btn=e.target.closest('[data-copy-preview-half]');
