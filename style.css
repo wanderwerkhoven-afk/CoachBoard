@@ -316,7 +316,7 @@ header {
 }
 
 .tabs button {
-  flex: 1 1 0;
+  flex: 1;
   min-width: 0;
   min-height: 46px !important;
   padding: 8px 4px !important;
@@ -327,24 +327,49 @@ header {
   font-weight: 700 !important;
   font-size: clamp(11.5px, 2.8vw, 14px) !important;
   box-shadow: var(--shadow-sm);
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .tabs button:hover {
   border-color: var(--red) !important;
   color: var(--red) !important;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
+.tabs button.on,
 .tabs .on {
-  background: linear-gradient(135deg, var(--red), var(--red-dark)) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 40%), linear-gradient(135deg, #e11d27, #b9131a) !important;
   color: #ffffff !important;
-  border-color: var(--red-dark) !important;
-  box-shadow: 0 4px 12px var(--red-glow) !important;
+  border-color: #990f15 !important;
+  box-shadow: 0 6px 16px rgba(217, 27, 36, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+  transform: scale(1.03) translateY(-1px);
+  z-index: 2;
+}
+
+.tabs button.on::after,
+.tabs .on::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  pointer-events: none;
+}
+
+.tabs button.on *,
+.tabs .on * {
+  color: #ffffff !important;
 }
 
 .nav-count {
@@ -360,13 +385,15 @@ header {
   font-size: 11px;
   font-weight: 700;
   background: var(--red-soft);
-  color: var(--red);
+  color: var(--red) !important;
   flex-shrink: 0;
 }
 
+.tabs button.on .nav-count,
 .tabs .on .nav-count {
   background: #ffffff !important;
-  color: var(--red-dark) !important;
+  color: #b9131a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Screens */
