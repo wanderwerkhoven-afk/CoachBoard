@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#c62828">
+<title>CoachBoard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<header>
+  <div>
+    <div class="club-head-row">
+      <button type="button" class="club-logo-button" id="clubLogoButton" title="Clublogo toevoegen of wijzigen" aria-label="Clublogo toevoegen of wijzigen">
+        <img id="clubLogoImage" alt="Clublogo" hidden>
+        <span id="clubLogoPlaceholder">+</span>
+      </button>
+      <input id="clubLogoInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+      <div class="team-edit-wrap">
+        <div class="team" id="teamNameHead">Mijn Team</div>
+        <button class="team-edit-btn" id="editTeamNameBtn" title="Teamnaam wijzigen" aria-label="Teamnaam wijzigen">✎</button>
+      </div>
+    </div>
+    <div id="teamEditPanel" class="team-edit-panel">
+      <input id="teamNameInput" placeholder="Teamnaam">
+      <div class="club-logo-edit-row">
+        <button type="button" class="btn ghost" id="changeClubLogo">Clublogo kiezen</button>
+        <button type="button" class="btn ghost" id="removeClubLogo">Logo verwijderen</button>
+      </div>
+      <div class="actions" style="margin-top:7px">
+        <button class="btn primary" id="saveTeam">Opslaan</button>
+        <button class="btn ghost" id="cancelTeamEdit">Annuleren</button>
+      </div>
+    </div>
+  </div>
+  <div class="header-coachboard">CoachBoard</div>
+</header>
+
+<nav class="tabs">
+  <button class="on" data-screen="home">Home</button>
+  <button data-screen="players">Spelers <span class="nav-count" id="navPlayersCount">0</span></button>
+  <button data-screen="matches">Wedstrijden <span class="nav-count" id="navMatchesCount">0</span></button>
+  <button data-screen="stats">Statistiek</button>
+</nav>
+
+<section id="home" class="screen on">
+  <div class="section-title season-title">Seizoen</div>
+  <div class="home-results compact-season">
+    <div class="home-result-card"><span>Winst</span><b id="homeWins">0</b></div>
+    <div class="home-result-card"><span>Gelijk</span><b id="homeDraws">0</b></div>
+    <div class="home-result-card"><span>Verlies</span><b id="homeLosses">0</b></div>
+    <div class="home-result-card"><span>Gespeeld / punten</span><b id="homePlayedPoints">0 / 0</b></div>
+  </div>
+
+  <div class="home-tabs-row">
+    <div class="home-match-tabs">
+      <button class="home-match-tab on" data-home-tab="next">Eerst volgende wedstrijd</button>
+      <button class="home-match-tab" data-home-tab="upcoming">Aankomende wedstrijden</button>
+      <button class="home-match-tab" data-home-tab="played">Gespeelde wedstrijden</button>
+    </div>
+    <button class="home-quick-add" id="homeQuickAddMatch" title="Snel wedstrijd toevoegen" aria-label="Snel wedstrijd toevoegen">+</button>
+  </div>
+
+  <div id="homeNextPanel" class="home-tab-panel on">
+    <div class="section-title home-match-heading">Eerst volgende wedstrijd</div>
+    <div id="homeNextMatch"></div>
+  </div>
+
+  <div id="homeUpcomingPanel" class="home-tab-panel home-always-visible">
+    <div class="section-title home-match-heading">Aankomende wedstrijden</div>
+    <div id="homeUpcomingMatches"></div>
+  </div>
+
+  <div id="homePlayedPanel" class="home-tab-panel home-always-visible">
+    <div class="section-title home-match-heading">Gespeelde wedstrijden</div>
+    <div id="homePlayedMatches"></div>
+  </div>
+</section>
+
+<section id="players" class="screen">
+  <div class="player-add-head">
+    <div class="section-title" style="margin:0">Spelers</div>
+    <button class="player-add-plus" id="togglePlayerAdd" title="Speler toevoegen" aria-label="Speler toevoegen">+</button>
+  </div>
+
+  <div class="player-filter-bar">
+    <select id="playerLevelFilter" aria-label="Filter op niveau">
+      <option value="all">Alle niveaus</option>
+      <option value="1">Niveau 1</option>
+      <option value="2">Niveau 2</option>
+      <option value="3">Niveau 3</option>
+    </select>
+
+    <select id="playerPositionFilter" aria-label="Filter op veldpositie">
+      <option value="all">Alle posities</option>
+      <option value="1">1 · Keeper</option>
+      <option value="2">2 · Rechtsback</option>
+      <option value="3">3 · Centrale verdediger</option>
+      <option value="4">4 · Centrale verdediger</option>
+      <option value="5">5 · Linksback</option>
+      <option value="6">6 · Centrale middenvelder</option>
+      <option value="7">7 · Rechts midden</option>
+      <option value="8">8 · Links midden</option>
+      <option value="9">9 · Rechts aanvaller</option>
+      <option value="10">10 · Spits / Aanvallende middenvelder</option>
+      <option value="11">11 · Links aanvaller</option>
+    </select>
+
+    <select id="playerSort" aria-label="Spelers sorteren">
+      <option value="level-asc" selected>Niveau N1 → N3</option>
+      <option value="level-desc">Niveau N3 → N1</option>
+      <option value="position-asc">Positie 1 → 11</option>
+      <option value="name-asc">Naam A → Z</option>
+    </select>
+
+    <button type="button" class="player-filter-reset" id="resetPlayerFilters" title="Filters wissen" aria-label="Filters wissen">×</button>
+  </div>
+
+  <div id="playerDeleteSuccess" class="player-delete-success" hidden></div>
+  <div id="playerList"></div>
+</section>
+
+<section id="matches" class="screen">
+  <div class="match-add-head">
+    <div class="section-title" style="margin:0">Wedstrijden</div>
+    <button class="match-add-plus" id="toggleMatchAdd" title="Wedstrijd toevoegen" aria-label="Wedstrijd toevoegen">+</button>
+  </div>
+
+  <div class="matches-filter-row">
+    <button type="button" class="matches-filter-btn on" data-match-filter="all">Alle wedstrijden</button>
+    <button type="button" class="matches-filter-btn" data-match-filter="played">Gespeelde wedstrijden</button>
+  </div>
+
+  <div id="restoreSuccessBanner" class="restore-success-banner" hidden>Wedstrijd hersteld. De statistieken zijn bijgewerkt.</div>
+  <div id="matchList"></div>
+
+  <div class="card accent match-add-card collapsed" id="matchAddCard">
+    <div class="section-title">Wedstrijd toevoegen</div>
+    <div class="match-add-grid">
+      <div>
+        <label>Tegenstander</label>
+        <input id="matchOpponent" placeholder="Tegenstander">
+      </div>
+      <div>
+        <label>Type wedstrijd</label>
+        <select id="matchType">
+          <option value="Competitie" selected>Competitie</option>
+          <option value="Beker">Beker</option>
+          <option value="Oefen / Overige">Oefen / Overige</option>
+        </select>
+      </div>
+      <div>
+        <label>Datum</label>
+        <input id="matchDate" type="date">
+      </div>
+      <div>
+        <label>Aanvangstijd</label>
+        <input id="matchTime" type="time">
+      </div>
+      <div>
+        <label>Thuis / Uit</label>
+        <select id="matchHomeAway"><option>Thuis</option><option>Uit</option></select>
+      </div>
+    </div>
+    <button class="btn primary" id="addMatch">Wedstrijd toevoegen</button>
+    <div class="match-type-help">Type wedstrijd wordt opgeslagen bij de wedstrijd en kan later worden gebruikt voor filtering/statistiek.</div>
+  </div>
+</section>
+
+<section id="stats" class="screen">
+<div id="statsMainView">
+  <div class="section-title">Statistieken</div>
+  <div class="stats-section-card">
+    <div class="season-title-row">
+      <div class="section-title" style="margin-top:0">1. Seizoensoverzicht</div>
+      <button type="button" id="downloadSeasonBook" class="season-download-btn" title="Download seizoensboek als PDF" aria-label="Download seizoensboek">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="stats-overview-grid season-overview-grid">
+      <button class="stats-overview-btn season-wide" id="openPlayedStats">
+        <span class="muted">Wedstrijden</span>
+        <b id="statsMatches">0/0</b>
+      </button>
+      <div class="stats-overview-btn"><span class="muted">Winst</span><b id="statsWins">0</b></div>
+      <div class="stats-overview-btn"><span class="muted">Gelijk</span><b id="statsDraws">0</b></div>
+      <div class="stats-overview-btn"><span class="muted">Verlies</span><b id="statsLosses">0</b></div>
+      <div class="stats-overview-btn"><span class="muted">Punten</span><b id="statsPoints">0</b></div>
+      <div class="stats-overview-btn season-goals">
+        <span class="muted">Doelpunten</span>
+        <b><span id="statsGoalsFor">0</span><small> voor</small> / <span id="statsGoalsAgainst">0</span><small> tegen</small></b>
+      </div>
+    </div>
+  </div>
+  <div class="stats-section-card">
+    <div class="section-title" style="margin-top:0">2. Spelersoverzicht</div>
+    <div class="muted" style="margin-bottom:6px">Klik op een speler voor de individuele spelersstatistiek.</div>
+    <div id="statsPlayerList"></div>
+  </div>
+</div>
+<div id="playedStatsView" style="display:none">
+  <button class="btn ghost" data-stats-back>← Terug</button>
+  <div class="section-title">Wedstrijdstatistiek</div>
+  <div id="playedStatsList" class="stats-section-card"></div>
+</div>
+<div id="playerStatsView" style="display:none">
+  <button class="btn ghost" data-stats-back>← Terug</button>
+  <div id="playerStatsDetail"></div>
+</div>
+</section>
+
+<section id="matchDetail" class="screen">
+  <button class="btn ghost" id="backToMatches">← Terug</button>
+  <div id="matchHeader"></div>
+
+  <div class="card accent availability-card-compact">
+    <div class="availability-head">
+      <div class="section-title">Beschikbaarheid</div>
+      <button type="button" class="availability-clear-btn" id="clearAvailability">Deselecteer</button>
+    </div>
+    <div id="availabilitySummary" class="grid3" style="margin:10px 0"></div>
+    <div class="legend">
+      <span><i class="mini g"></i>Aanwezig en fit</span>
+      <span><i class="mini o"></i>Halve wedstrijd</span>
+      <span><i class="mini r"></i>Aanwezig, niet spelend</span>
+      <span><i class="mini k"></i>Afwezig</span>
+    </div>
+    <div id="availabilityList"></div>
+<div id="availabilityMissingSummary" class="availability-missing-summary" hidden></div>
+    <div id="coverageAdvice"></div>
+  </div>
+
+  <div class="card">
+    <label>Formatie</label>
+    <select id="formation"><option>4-3-3</option><option>4-4-2</option></select>
+    <label>Minimale balansbezetting</label>
+    <input id="minStrong" type="number" min="6" max="11" value="8">
+    <div class="muted" style="margin-top:5px">Kies 6 t/m 11 spelers van niveau 1 en 2 per helft. Bij keuze 10 of 11 spelen niveau-1-spelers altijd beide helften.</div>
+    <label>Type voorstel</label>
+    <select id="proposalMode">
+      <option value="standard">Standaard</option>
+      <option value="fair">Eerlijk wisselbeleid</option>
+    </select>
+    <div class="muted" id="modeHelp" style="margin-top:6px">Alleen aanwezigheid en posities, zonder historie of voorkeur voor sterkste spelers.</div>
+    <button class="btn primary" id="generateLineups" style="width:100%;margin-top:10px">Genereer beide helften</button>
+  </div>
+
+  <div id="lineupMsg"></div>
+
+  <div class="lineup-half-card">
+    <div class="lineup-half-head">
+      <div class="lineup-half-title">1e helft <span class="muted">0–35 min</span></div>
+      <div class="lineup-toolbar">
+        <button class="btn ghost" id="restore1">Herstel voorstel 1e helft</button>
+      <button type="button" class="copy-lineup-btn" data-copy-half="1" title="Kopieer deze opstelling als afbeelding">▣ Kopieer afbeelding</button>
+      </div>
+    </div>
+    <div class="pitch" id="pitch1"></div>
+  </div>
+  <div id="bench1" class="card lineup-bench-panel"></div>
+
+  <div class="lineup-half-card">
+    <div class="lineup-half-head">
+      <div class="lineup-half-title">2e helft <span class="muted">35–70 min</span></div>
+      <div class="lineup-toolbar">
+        <button class="btn ghost" id="restore2">Herstel voorstel 2e helft</button>
+      <button type="button" class="copy-lineup-btn" data-copy-half="2" title="Kopieer deze opstelling als afbeelding">▣ Kopieer afbeelding</button>
+      </div>
+    </div>
+    <div class="pitch" id="pitch2"></div><button class="share-lineup-btn" id="shareLineupWhatsApp" type="button" title="Deel opstelling via WhatsApp" aria-label="Deel opstelling via WhatsApp">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a9.7 9.7 0 0 0-8.4 14.6L2 22l5.6-1.5A9.8 9.8 0 1 0 12 2Zm0 17.7a7.8 7.8 0 0 1-4-1.1l-.3-.2-3.3.9.9-3.2-.2-.3A7.8 7.8 0 1 1 12 19.7Zm4.3-5.8c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.8.9-.1.2-.3.2-.5.1-1.4-.7-2.3-1.3-3.2-2.9-.2-.3.2-.3.7-1 .1-.2.1-.3 0-.5l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.2.7 3 .6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1-.1-.1-.3-.2-.5-.3Z"/></svg>
+WhatsApp
+</button>
+  </div>
+  <div id="bench2" class="card lineup-bench-panel"></div>
+
+  <div class="card accent">
+    <div class="section-title" style="margin-top:0">Wedstrijdoverzicht</div>
+    <div id="selectionOverview"></div>
+  </div>
+
+  <div class="card" id="legacyFinishCard" style="display:none!important" aria-hidden="true">
+    <div class="section-title" style="margin-top:0">Wedstrijd afronden</div>
+    <div class="muted">Open de afronding, vul de uitslag in en controleer de definitieve opstelling.</div>
+    <button class="btn primary" id="openFinishPanel" style="width:100%;margin-top:10px">Wedstrijd afronden</button>
+
+    <div id="finishPanel" class="finish-panel">
+      <div class="hr"></div>
+
+      <label>Wedstrijduitslag</label>
+      <input id="finalResult" placeholder="bijv. 3-1">
+
+      <div class="section-title" style="font-size:15px;margin-top:14px">Definitieve opstelling</div>
+      <div class="muted">De huidige opstellingen van de 1e en 2e helft worden hieronder gebruikt als definitieve opstelling. Pas ze bovenaan nog aan indien nodig.</div>
+
+      <div id="finalLineupSummary" class="final-lineup-list"></div>
+
+      <button class="btn primary" id="finishMatch" style="width:100%;margin-top:14px">Wedstrijd opslaan in statistieken</button>
+    </div>
+  </div>
+
+  <div id="restorePreparedCard" class="restore-prepared-card" style="display:none">
+    <button type="button" id="restorePreparedBtn" class="restore-prepared-btn">
+      Herstel naar Voorbereid
+    </button>
+    <div class="restore-prepared-help">
+      Verwijdert deze wedstrijd uit de statistieken en zet de wedstrijdstatus terug naar Voorbereid.
+    </div>
+  </div>
+</section>
+<div id="swapModal" class="swap-backdrop" aria-hidden="true">
+  <div class="swap-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div>
+        <div class="section-title" style="margin:0">Speler wisselen</div>
+        <div id="swapInfo" class="muted"></div>
+      </div>
+      <button class="btn ghost" id="closeSwap">Sluiten</button>
+    </div>
+    <div id="swapOptions" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="editMatchModal" class="edit-match-backdrop">
+ <div class="edit-match-box">
+  <div class="section-title" style="margin-top:0">Wedstrijd wijzigen</div>
+  <div class="edit-grid">
+   <div class="full"><label>Tegenstander</label><input id="editOpponent"></div>
+   <div><label>Datum</label><input id="editDate" type="date"></div>
+   <div><label>Aanvangstijd</label><input id="editTime" type="time"></div>
+   <div><label>Type wedstrijd</label><select id="editMatchType"><option>Competitie</option><option>Beker</option><option>Oefen / Overige</option></select></div>
+   <div><label>Thuis / Uit</label><select id="editHomeAway"><option>Thuis</option><option>Uit</option></select></div>
+   <div class="full"><label>Uitslag</label><input id="editResult" placeholder="bijv. 3-1"></div>
+  </div>
+  <div class="actions" style="margin-top:14px"><button class="btn ghost" id="cancelEditMatch">Annuleren</button><button class="btn primary" id="saveEditMatch">Opslaan</button></div>
+ </div>
+</div>
+<div id="deleteModal" class="delete-backdrop" aria-hidden="true">
+  <div class="delete-box">
+    <div class="delete-title">Wedstrijd verwijderen?</div>
+    <div id="deleteMatchText" class="muted"></div>
+    <div class="delete-actions">
+      <button class="btn ghost" id="cancelDeleteMatch">Annuleren</button>
+      <button class="btn delete-danger" id="confirmDeleteMatch">Verwijderen</button>
+    </div>
+  </div>
+</div>
+
+<div id="lineupPreviewModal" class="lineup-preview-backdrop" aria-hidden="true">
+  <div class="lineup-preview-shell">
+    <div class="lineup-preview-head">
+      <div>
+        <div class="section-title" style="margin:0">Opstelling</div>
+        <div id="lineupPreviewMatchTitle" class="muted"></div>
+      </div>
+      <button class="btn ghost" id="closeLineupPreview">Sluiten</button>
+    </div>
+
+    <div class="lineup-preview-grid">
+      <div class="lineup-preview-card" data-preview-card="1">
+        <div class="preview-card-head">
+          <h3>1e helft <span class="muted">0–35 min</span></h3>
+          <button type="button" class="copy-lineup-btn" data-copy-preview-half="1" title="Kopieer 1e helft als afbeelding">▣ Kopieer afbeelding</button>
+        </div>
+        <div id="previewPitch1" class="preview-pitch"></div>
+        <div id="previewBench1" class="preview-bench"></div>
+      </div>
+
+      <div class="lineup-preview-card" data-preview-card="2">
+        <div class="preview-card-head">
+          <h3>2e helft <span class="muted">35–70 min</span></h3>
+          <button type="button" class="copy-lineup-btn" data-copy-preview-half="2" title="Kopieer 2e helft als afbeelding">▣ Kopieer afbeelding</button>
+        </div>
+        <div id="previewPitch2" class="preview-pitch"></div>
+        <div id="previewBench2" class="preview-bench"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="finishResultModal" class="finish-result-backdrop" aria-hidden="true">
+  <div class="finish-result-box">
+    <div class="section-title" style="margin:0">Wedstrijd afronden</div>
+    <div id="finishResultMatchTitle" class="muted" style="margin-top:3px"></div>
+
+    <div class="finish-result-note">
+      Vul de definitieve uitslag in. Na opslaan wordt de wedstrijd verwerkt in de seizoen- en spelersstatistieken.
+    </div>
+
+    <div class="finish-special-title">Geen uitslag?</div>
+    <div class="finish-special-options" id="finishSpecialOptions">
+      <button type="button" class="finish-special-option" data-finish-special="Afgelast">
+        <span class="finish-special-check">✓</span><span>Wedstrijd afgelast</span>
+      </button>
+      <button type="button" class="finish-special-option" data-finish-special="Verplaatst">
+        <span class="finish-special-check">✓</span><span>Wedstrijd verplaatst</span>
+      </button>
+      <button type="button" class="finish-special-option" data-finish-special="Geannuleerd">
+        <span class="finish-special-check">✓</span><span>Wedstrijd geannuleerd</span>
+      </button>
+    </div>
+    <div class="finish-special-help">Selecteer één optie. Bij deze statussen wordt geen wedstrijduitslag opgeslagen.</div>
+
+    <div class="finish-result-score" id="finishScoreFields">
+      <div>
+        <label id="finishHomeLabel">Ons team</label>
+        <input id="finishHomeScore" inputmode="numeric" pattern="[0-9]*" min="0" type="number" value="0">
+      </div>
+      <div class="finish-result-sep">–</div>
+      <div>
+        <label id="finishAwayLabel">Tegenstander</label>
+        <input id="finishAwayScore" inputmode="numeric" pattern="[0-9]*" min="0" type="number" value="0">
+      </div>
+    </div>
+
+    <div class="finish-scorers-wrap" id="finishScorersWrap">
+      <div class="finish-scorers-head">
+        <div>
+          <div class="finish-scorers-title">Doelpuntenmakers</div>
+          <div class="muted">Het aantal velden volgt automatisch het aantal doelpunten van K.G.B. Typ de eerste letters van de naam.</div>
+        </div>
+      </div>
+      <div id="finishScorerRows" class="finish-scorer-rows"></div>
+      <datalist id="finishPlayerSuggestions"></datalist>
+    </div>
+
+    <div class="finish-result-actions">
+      <button class="btn ghost" id="cancelFinishResult">Annuleren</button>
+      <button class="btn primary" id="confirmFinishResult">Afronden & opslaan</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="modal" id="playerEditModal" aria-hidden="true">
+  <div class="modal-card player-edit-modal-card">
+    <div class="modal-head">
+      <div>
+        <div class="section-title" style="margin:0">Speler toevoegen / wijzigen</div>
+        <div class="muted">Beheer naam, niveau, posities en standaard beschikbaarheid.</div>
+      </div>
+      <button class="icon-btn" id="closePlayerEdit" aria-label="Sluiten">×</button>
+    </div>
+    
+    <input type="hidden" id="editPlayerId">
+    
+    <label for="editPlayerName">Naam</label>
+    <input id="editPlayerName" placeholder="Naam speler">
+    
+    <label>Niveau</label>
+    <input type="hidden" id="editPlayerLevel" value="2">
+    <div class="player-level-row" id="editPlayerLevelButtons">
+      <button type="button" class="player-level-choice level-1" data-player-level="1">Niveau 1</button>
+      <button type="button" class="player-level-choice level-2" data-player-level="2">Niveau 2</button>
+      <button type="button" class="player-level-choice level-3" data-player-level="3">Niveau 3</button>
+    </div>
+    
+    <label>Posities — meerdere mogelijk</label>
+    <div class="player-edit-positions" id="editPlayerPositions"></div>
+    
+    <label>Voorkeur beschikbaarstatus</label>
+    <input type="hidden" id="editPlayerPreferredAvailability" value="fit">
+    <div class="player-pref-status-row" id="editPlayerPreferredAvailabilityButtons">
+      <button type="button" class="player-pref-status fit" data-pref-status="fit" title="Hele wedstrijd" aria-label="Hele wedstrijd"><span class="pref-dot"></span></button>
+      <button type="button" class="player-pref-status limited" data-pref-status="limited" title="Halve wedstrijd" aria-label="Halve wedstrijd"><span class="pref-dot"></span></button>
+      <button type="button" class="player-pref-status noPlay" data-pref-status="noPlay" title="Niet spelend" aria-label="Niet spelend"><span class="pref-dot"></span></button>
+      <button type="button" class="player-pref-status absent" data-pref-status="absent" title="Afwezig" aria-label="Afwezig"><span class="pref-dot"></span></button>
+    </div>
+    <div class="muted player-pref-help">Deze voorkeur wordt standaard overgenomen bij het voorbereiden van een wedstrijd.</div>
+    
+    <label for="editPlayerAbsenceDate">Datums afwezig</label>
+    <div class="player-absence-add-row">
+      <input id="editPlayerAbsenceDate" type="date" aria-label="Datum afwezig">
+      <button type="button" class="player-absence-add-btn" id="addPlayerAbsenceDate">+</button>
+    </div>
+    <div id="editPlayerAbsenceDates" class="player-absence-dates"></div>
+    <div class="muted player-pref-help">Op deze datums wordt de speler bij het voorbereiden van een wedstrijd automatisch op Afwezig gezet.</div>
+    
+    <div class="actions">
+      <button class="btn ghost" id="cancelPlayerEdit">Annuleren</button>
+      <button class="btn primary" id="savePlayerEdit">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
