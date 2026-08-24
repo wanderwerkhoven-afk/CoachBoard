@@ -40,29 +40,6 @@ function showToast(message, type='success', duration=3000){
 }
 
 
-// State definitions & persistence
-function defaultState(){return {"teamName": "FC Voorbeeld", "players": [{"id": "p_demo_1", "name": "Lars", "level": 1, "positions": [1], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_2", "name": "Sem", "level": 1, "positions": [2, 3], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_3", "name": "Daan", "level": 2, "positions": [3, 4], "stats": {"minutes": 525, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_4", "name": "Milan", "level": 2, "positions": [4, 5], "stats": {"minutes": 490, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_5", "name": "Jesse", "level": 3, "positions": [2, 5], "stats": {"minutes": 315, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_6", "name": "Noah", "level": 1, "positions": [6, 10], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_7", "name": "Finn", "level": 2, "positions": [6, 7], "stats": {"minutes": 455, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_8", "name": "Lucas", "level": 2, "positions": [6, 8], "stats": {"minutes": 420, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_9", "name": "Mees", "level": 1, "positions": [9, 10], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_10", "name": "Sam", "level": 2, "positions": [9, 11], "stats": {"minutes": 490, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_11", "name": "Bram", "level": 3, "positions": [10, 11], "stats": {"minutes": 280, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_12", "name": "Thijs", "level": 3, "positions": [7, 8], "stats": {"minutes": 245, "matches": 6, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_13", "name": "Jens", "level": 2, "positions": [2, 7], "stats": {"minutes": 385, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_14", "name": "Noud", "level": 3, "positions": [3, 4], "stats": {"minutes": 280, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_15", "name": "Timo", "level": 2, "positions": [10, 11], "stats": {"minutes": 420, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_16", "name": "Sven", "level": 2, "positions": [2, 5], "stats": {"minutes": 350, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_17", "name": "Mats", "level": 3, "positions": [6, 8], "stats": {"minutes": 210, "matches": 6, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_18", "name": "Olivier", "level": 1, "positions": [3, 4], "stats": {"minutes": 560, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_19", "name": "Jayden", "level": 2, "positions": [9, 10], "stats": {"minutes": 375, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_20", "name": "Ruben", "level": 3, "positions": [7, 11], "stats": {"minutes": 175, "matches": 5, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}], "matches": [{"id": "m_demo_1", "opponent": "SV Westfrisia", "date": "2026-08-29", "time": "14:30", "homeAway": "Thuis", "result": "", "formation": "4-3-3", "minStrong": 8, "mode": "standard", "availability": {"p_demo_1": "fit", "p_demo_2": "fit", "p_demo_3": "fit", "p_demo_4": "fit", "p_demo_5": "fit", "p_demo_6": "fit", "p_demo_7": "fit", "p_demo_8": "fit", "p_demo_9": "fit", "p_demo_10": "fit", "p_demo_11": "limited", "p_demo_12": "fit", "p_demo_13": "fit", "p_demo_14": "noPlay", "p_demo_15": "absent", "p_demo_16": "fit", "p_demo_17": "fit", "p_demo_18": "fit", "p_demo_19": "fit", "p_demo_20": "fit"}, "lineup1": {}, "lineup2": {}, "completed": false}, {"id": "m_demo_andijk_20260815", "opponent": "Andijk", "date": "2026-08-15", "time": "14:30", "homeAway": "Thuis", "result": "", "formation": "4-3-3", "minStrong": 8, "mode": "standard", "availability": {"p_demo_1": "fit", "p_demo_2": "fit", "p_demo_3": "fit", "p_demo_4": "fit", "p_demo_5": "fit", "p_demo_6": "fit", "p_demo_7": "fit", "p_demo_8": "fit", "p_demo_9": "fit", "p_demo_10": "fit", "p_demo_11": "limited", "p_demo_12": "fit", "p_demo_13": "fit", "p_demo_14": "noPlay", "p_demo_15": "absent", "p_demo_16": "fit", "p_demo_17": "fit", "p_demo_18": "fit", "p_demo_19": "fit", "p_demo_20": "fit"}, "lineup1": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "lineup2": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "generatedLineup1": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "generatedLineup2": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "prepared": true, "completed": false}]}}
-function loadState(){try{return JSON.parse(localStorage.getItem(KEY))||defaultState()}catch(e){return defaultState()}}
-function saveState(){
-  localStorage.setItem(KEY,JSON.stringify(state));
-  renderAll();
-  if(window.syncStateToCloud){
-    window.syncStateToCloud(state);
-  }
-}
-
-// Allow external (cloud/Firebase) updates to update in-memory state and re-render
-window.getCoachBoardState = function(){ return state; };
-window.setCoachBoardState = function(newState){
-  if(newState && typeof newState === 'object'){
-    state = newState;
-    localStorage.setItem(KEY, JSON.stringify(state));
-    renderAll();
-  }
-};
-window.renderAll = renderAll;
-window.defaultState = defaultState;
-
 let state=loadState();
 
 function migrateCoachBoardData(){
@@ -142,25 +119,14 @@ migrateCoachBoardData();
 let activeMatchId=null;
 let chosenPositions=new Set();
 
-function formatDateNL(value) {
-  if (!value) return '—';
-
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-
-  return new Intl.DateTimeFormat('nl-NL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(date);
-}
-
-function uid(prefix = 'id') {
-  const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-
-  return `${prefix}_${id}`;
+function defaultState(){return {"teamName": "FC Voorbeeld", "players": [{"id": "p_demo_1", "name": "Lars", "level": 1, "positions": [1], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_2", "name": "Sem", "level": 1, "positions": [2, 3], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_3", "name": "Daan", "level": 2, "positions": [3, 4], "stats": {"minutes": 525, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_4", "name": "Milan", "level": 2, "positions": [4, 5], "stats": {"minutes": 490, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_5", "name": "Jesse", "level": 3, "positions": [2, 5], "stats": {"minutes": 315, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_6", "name": "Noah", "level": 1, "positions": [6, 10], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_7", "name": "Finn", "level": 2, "positions": [6, 7], "stats": {"minutes": 455, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_8", "name": "Lucas", "level": 2, "positions": [6, 8], "stats": {"minutes": 420, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_9", "name": "Mees", "level": 1, "positions": [9, 10], "stats": {"minutes": 630, "matches": 9, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_10", "name": "Sam", "level": 2, "positions": [9, 11], "stats": {"minutes": 490, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_11", "name": "Bram", "level": 3, "positions": [10, 11], "stats": {"minutes": 280, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_12", "name": "Thijs", "level": 3, "positions": [7, 8], "stats": {"minutes": 245, "matches": 6, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_13", "name": "Jens", "level": 2, "positions": [2, 7], "stats": {"minutes": 385, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_14", "name": "Noud", "level": 3, "positions": [3, 4], "stats": {"minutes": 280, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_15", "name": "Timo", "level": 2, "positions": [10, 11], "stats": {"minutes": 420, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_16", "name": "Sven", "level": 2, "positions": [2, 5], "stats": {"minutes": 350, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_17", "name": "Mats", "level": 3, "positions": [6, 8], "stats": {"minutes": 210, "matches": 6, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_18", "name": "Olivier", "level": 1, "positions": [3, 4], "stats": {"minutes": 560, "matches": 8, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_19", "name": "Jayden", "level": 2, "positions": [9, 10], "stats": {"minutes": 375, "matches": 7, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}, {"id": "p_demo_20", "name": "Ruben", "level": 3, "positions": [7, 11], "stats": {"minutes": 175, "matches": 5, "fit": 6, "limited": 1, "noPlay": 0, "absent": 1, "fullMatches": 0, "halfMatches": 0}}], "matches": [{"id": "m_demo_1", "opponent": "SV Westfrisia", "date": "2026-08-29", "time": "14:30", "homeAway": "Thuis", "result": "", "formation": "4-3-3", "minStrong": 8, "mode": "standard", "availability": {"p_demo_1": "fit", "p_demo_2": "fit", "p_demo_3": "fit", "p_demo_4": "fit", "p_demo_5": "fit", "p_demo_6": "fit", "p_demo_7": "fit", "p_demo_8": "fit", "p_demo_9": "fit", "p_demo_10": "fit", "p_demo_11": "limited", "p_demo_12": "fit", "p_demo_13": "fit", "p_demo_14": "noPlay", "p_demo_15": "absent", "p_demo_16": "fit", "p_demo_17": "fit", "p_demo_18": "fit", "p_demo_19": "fit", "p_demo_20": "fit"}, "lineup1": {}, "lineup2": {}, "completed": false}, {"id": "m_demo_andijk_20260815", "opponent": "Andijk", "date": "2026-08-15", "time": "14:30", "homeAway": "Thuis", "result": "", "formation": "4-3-3", "minStrong": 8, "mode": "standard", "availability": {"p_demo_1": "fit", "p_demo_2": "fit", "p_demo_3": "fit", "p_demo_4": "fit", "p_demo_5": "fit", "p_demo_6": "fit", "p_demo_7": "fit", "p_demo_8": "fit", "p_demo_9": "fit", "p_demo_10": "fit", "p_demo_11": "limited", "p_demo_12": "fit", "p_demo_13": "fit", "p_demo_14": "noPlay", "p_demo_15": "absent", "p_demo_16": "fit", "p_demo_17": "fit", "p_demo_18": "fit", "p_demo_19": "fit", "p_demo_20": "fit"}, "lineup1": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "lineup2": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "generatedLineup1": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "generatedLineup2": {"1": "p_demo_1", "2": "p_demo_2", "3": "p_demo_3", "4": "p_demo_4", "5": "p_demo_5", "6": "p_demo_6", "7": "p_demo_7", "8": "p_demo_8", "9": "p_demo_9", "10": "p_demo_10", "11": "p_demo_11"}, "prepared": true, "completed": false}]}}
+function loadState(){try{return JSON.parse(localStorage.getItem(KEY))||defaultState()}catch(e){return defaultState()}}
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state));renderAll()}
+function uid(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
+function formatDateNL(value){
+  if(!value)return '—';
+  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?`${m[3]}-${m[2]}-${m[1]}`:value;
 }
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -341,56 +307,42 @@ function bindPlayerPdfDoubleClick(){
 }
 
 
-function renderAll(){
-  try{
-    renderHeader();
-    renderHome();
-    renderPlayers();
-    renderMatches();
-    if(document.getElementById('stats')?.classList.contains('on'))renderStats();
-  }catch(e){
-    console.warn('renderAll error:', e);
-  }
-}
+function renderAll(){renderHeader();renderHome();renderPlayers();renderMatches();if(document.getElementById('stats').classList.contains('on'))renderStats();}
 function renderHeader(){
   const navP=document.getElementById('navPlayersCount');
   const navM=document.getElementById('navMatchesCount');
   if(navP)navP.textContent=state.players.length;
   if(navM)navM.textContent=state.matches.length;
-  const teamNameHead=document.getElementById('teamNameHead');
-  const teamNameInput=document.getElementById('teamNameInput');
-  if(teamNameHead)teamNameHead.textContent=state.teamName||'Mijn Team';
-  if(teamNameInput)teamNameInput.value=state.teamName||'';
+  document.getElementById('teamNameHead').textContent=state.teamName||'Mijn Team';
+  document.getElementById('teamNameInput').value=state.teamName||'';
 
   const logoBtn=document.getElementById('clubLogoButton');
   const logoImg=document.getElementById('clubLogoImage');
   const logoPlaceholder=document.getElementById('clubLogoPlaceholder');
-  if(logoImg && logoPlaceholder && logoBtn){
-    if(state.clubLogo){
-      logoImg.src=state.clubLogo;
-      logoImg.hidden=false;
-      logoPlaceholder.hidden=true;
-      logoBtn.classList.add('has-logo');
-    }else{
-      logoImg.removeAttribute('src');
-      logoImg.hidden=true;
-      logoPlaceholder.hidden=false;
-      logoBtn.classList.remove('has-logo');
-    }
+  if(state.clubLogo){
+    logoImg.src=state.clubLogo;
+    logoImg.hidden=false;
+    logoPlaceholder.hidden=true;
+    logoBtn.classList.add('has-logo');
+  }else{
+    logoImg.removeAttribute('src');
+    logoImg.hidden=true;
+    logoPlaceholder.hidden=false;
+    logoBtn.classList.remove('has-logo');
   }
 }
-document.getElementById('saveTeam')?.addEventListener('click',()=>{
+document.getElementById('saveTeam').addEventListener('click',()=>{
   state.teamName=document.getElementById('teamNameInput').value.trim()||'Mijn Team';
   saveState();
   renderHeader();
   document.getElementById('teamEditPanel').classList.remove('on');
   showToast('Teamnaam opgeslagen', 'success');
 });
-document.getElementById('editTeamNameBtn')?.addEventListener('click',()=>{
+document.getElementById('editTeamNameBtn').addEventListener('click',()=>{
   document.getElementById('teamNameInput').value=state.teamName||'';
   document.getElementById('teamEditPanel').classList.toggle('on');
 });
-document.getElementById('cancelTeamEdit')?.addEventListener('click',()=>{
+document.getElementById('cancelTeamEdit').addEventListener('click',()=>{
   document.getElementById('teamEditPanel').classList.remove('on');
 });
 
@@ -539,40 +491,16 @@ let editingMatchId=null;
 function openEditMatch(id,resultOnly=false){
  const m=state.matches.find(x=>x.id===id); if(!m)return;
  editingMatchId=id;
- const editOpponent = document.getElementById('editOpponent');
- const editDate = document.getElementById('editDate');
- const editTime = document.getElementById('editTime');
- const editHomeAway = document.getElementById('editHomeAway');
- const editResult = document.getElementById('editResult');
- const editMatchModal = document.getElementById('editMatchModal');
-
- if(editOpponent) editOpponent.value=m.opponent||'';
- if(editDate) editDate.value=m.date||'';
- if(editTime) editTime.value=m.time||'';
- if(editHomeAway) editHomeAway.value=m.homeAway||'Thuis';
- if(editResult) editResult.value=m.result||'';
- if(editMatchModal) editMatchModal.classList.add('on');
- setTimeout(()=>document.getElementById(resultOnly?'editResult':'editOpponent')?.focus(),30);
+ editOpponent.value=m.opponent||''; editDate.value=m.date||''; editTime.value=m.time||'';
+ editHomeAway.value=m.homeAway||'Thuis'; editResult.value=m.result||'';
+ editMatchModal.classList.add('on');
+ setTimeout(()=>document.getElementById(resultOnly?'editResult':'editOpponent').focus(),30);
 }
-function closeEditMatch(){
-  editingMatchId=null;
-  document.getElementById('editMatchModal')?.classList.remove('on');
-}
+function closeEditMatch(){editingMatchId=null;editMatchModal.classList.remove('on')}
 function saveEditedMatch(){
  const m=state.matches.find(x=>x.id===editingMatchId); if(!m)return;
- const editOpponent = document.getElementById('editOpponent');
- const editDate = document.getElementById('editDate');
- const editTime = document.getElementById('editTime');
- const editHomeAway = document.getElementById('editHomeAway');
- const editResult = document.getElementById('editResult');
-
- const opponent = editOpponent?.value.trim() || '';
- const date = editDate?.value || '';
- const time = editTime?.value || '';
- const homeAway = editHomeAway?.value || 'Thuis';
- const result = editResult?.value.trim() || '';
-
- if(!opponent||!date||!time){
+ const result=editResult.value.trim();
+ if(!editOpponent.value.trim()||!editDate.value||!editTime.value){
    showToast('Vul tegenstander, datum en aanvangstijd in', 'warning');
    return;
  }
@@ -580,23 +508,15 @@ function saveEditedMatch(){
    showToast('Gebruik voor de uitslag bijvoorbeeld 3-1', 'warning');
    return;
  }
- m.opponent=opponent;
- m.date=date;
- m.time=time;
- m.homeAway=homeAway;
- m.result=result;
- saveState();
+ m.opponent=editOpponent.value.trim();m.date=editDate.value;m.time=editTime.value;m.homeAway=editHomeAway.value;m.result=result;
+ localStorage.setItem(KEY,JSON.stringify(state));
  closeEditMatch();
  renderAll();
- bindHomeMatchTabs();
- if(activeMatchId===m.id)renderMatchDetail();
+ bindHomeMatchTabs();if(activeMatchId===m.id)renderMatchDetail();
  showToast('Wedstrijdgegevens opgeslagen', 'success');
 }
-document.getElementById('cancelEditMatch')?.addEventListener('click',closeEditMatch);
-document.getElementById('saveEditMatch')?.addEventListener('click',saveEditedMatch);
-document.getElementById('editMatchModal')?.addEventListener('click',e=>{
-  if(e.target?.id==='editMatchModal')closeEditMatch();
-});
+cancelEditMatch.addEventListener('click',closeEditMatch);saveEditMatch.addEventListener('click',saveEditedMatch);
+editMatchModal.addEventListener('click',e=>{if(e.target===editMatchModal)closeEditMatch()});
 
 // Centrale navigatie naar statistiek-/spelerbladen.
 
@@ -654,7 +574,7 @@ document.addEventListener('change',e=>{
   const match=state.matches.find(x=>x.id===note.dataset.matchNote);
   if(!match)return;
   match.notes=note.value;
-  saveState();
+  localStorage.setItem(KEY,JSON.stringify(state));
 });
 const editMatchSheetInfo=document.getElementById('editMatchSheetInfo');
 if(editMatchSheetInfo)editMatchSheetInfo.addEventListener('click',e=>{
@@ -1375,7 +1295,7 @@ function deletePlayer(id){
     rebuildStoredPlayerStats();
   }
 
-  saveState();
+  localStorage.setItem(KEY,JSON.stringify(state));
   renderAll();
   showToast(`Speler ${playerName} verwijderd`, 'info');
   return true;
@@ -1524,7 +1444,7 @@ document.getElementById('toggleMatchAdd')?.addEventListener('click',()=>{
   }
 });
 
-document.getElementById('addMatch')?.addEventListener('click',()=>{
+document.getElementById('addMatch').addEventListener('click',()=>{
   const opponent=document.getElementById('matchOpponent').value.trim();
   const date=document.getElementById('matchDate').value;
   const time=document.getElementById('matchTime').value;
@@ -1579,7 +1499,7 @@ function confirmDeleteMatch(){
   const matchName=match?match.opponent:'Wedstrijd';
 
   state.matches=state.matches.filter(m=>m.id!==id);
-  saveState();
+  localStorage.setItem(KEY,JSON.stringify(state));
 
   if(activeMatchId===id){
     activeMatchId=null;
@@ -1591,9 +1511,9 @@ function confirmDeleteMatch(){
   showToast(`Wedstrijd tegen ${matchName} verwijderd`, 'info');
 }
 
-document.getElementById('cancelDeleteMatch')?.addEventListener('click',closeDeleteMatchModal);
-document.getElementById('confirmDeleteMatch')?.addEventListener('click',confirmDeleteMatch);
-document.getElementById('deleteModal')?.addEventListener('click',e=>{
+document.getElementById('cancelDeleteMatch').addEventListener('click',closeDeleteMatchModal);
+document.getElementById('confirmDeleteMatch').addEventListener('click',confirmDeleteMatch);
+document.getElementById('deleteModal').addEventListener('click',e=>{
   if(e.target.id==='deleteModal')closeDeleteMatchModal();
 });
 
@@ -1786,7 +1706,7 @@ if(!m)return;
   saveState();
   show('matchDetail');renderMatchDetail();
 }
-document.getElementById('backToMatches')?.addEventListener('click',()=>show('matches'));
+document.getElementById('backToMatches').addEventListener('click',()=>show('matches'));
 
 function renderMatchDetail(){
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
@@ -2042,7 +1962,7 @@ document.getElementById('clearAvailability')?.addEventListener('click',()=>{
   saveState();
   renderMatchDetail();
 });
-document.getElementById('proposalMode')?.addEventListener('change',updateModeHelp);
+document.getElementById('proposalMode').addEventListener('change',updateModeHelp);
 function updateModeHelp(){
   const v=document.getElementById('proposalMode').value;
   document.getElementById('modeHelp').textContent=
@@ -2051,8 +1971,8 @@ function updateModeHelp(){
       :'Eerlijk wisselbeleid: speelminuten uit wedstrijden waarin de speler beschikbaar was bepalen de prioriteit. Afwezigheid telt niet mee. Niveau 3 staat standaard op halve wedstrijd en speelt maximaal 35 minuten.';
 }
 
-document.getElementById('generateLineups')?.addEventListener('click',generateLineups);
-document.getElementById('formation')?.addEventListener('change',()=>{const m=state.matches.find(x=>x.id===activeMatchId);m.formation=document.getElementById('formation').value;saveState();drawLineups()});
+document.getElementById('generateLineups').addEventListener('click',generateLineups);
+document.getElementById('formation').addEventListener('change',()=>{const m=state.matches.find(x=>x.id===activeMatchId);m.formation=document.getElementById('formation').value;saveState();drawLineups()});
 
 
 function fairPolicyMinutes(playerId){
@@ -3093,10 +3013,10 @@ function renderBench(){
   makeBench('bench2',bench2,2);
 }
 
-document.getElementById('closeSwap')?.addEventListener('click',closeSwapChooser);
-document.getElementById('swapModal')?.addEventListener('click',e=>{if(e.target.id==='swapModal')closeSwapChooser();});
-document.getElementById('restore1')?.addEventListener('click',()=>restoreGenerated(1));
-document.getElementById('restore2')?.addEventListener('click',()=>restoreGenerated(2));
+document.getElementById('closeSwap').addEventListener('click',closeSwapChooser);
+document.getElementById('swapModal').addEventListener('click',e=>{if(e.target.id==='swapModal')closeSwapChooser();});
+document.getElementById('restore1').addEventListener('click',()=>restoreGenerated(1));
+document.getElementById('restore2').addEventListener('click',()=>restoreGenerated(2));
 
 
 function renderFinalLineupSummary(){
@@ -3132,9 +3052,9 @@ function openFinishPanel(){
   renderFinalLineupSummary();
 }
 
-document.getElementById('openFinishPanel')?.addEventListener('click',openFinishPanel);
+document.getElementById('openFinishPanel').addEventListener('click',openFinishPanel);
 
-document.getElementById('finishMatch')?.addEventListener('click',()=>{
+document.getElementById('finishMatch').addEventListener('click',()=>{
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
   if(m.completed){alert('Deze wedstrijd is al verwerkt in de statistieken.');return}
 
@@ -3219,7 +3139,7 @@ function restorePreparedMatch(button){
   rebuildStoredPlayerStats();
 
   // Direct persistent opslaan.
-  saveState();
+  localStorage.setItem(KEY,JSON.stringify(state));
 
   activeMatchId=match.id;
 
@@ -4644,8 +4564,3 @@ document.getElementById('downloadSeasonBook')?.addEventListener('click',e=>{
   e.preventDefault();
   downloadSeasonBookPdf();
 });
-
-// ==========================================================================
-// Auth is handled by auth.js (Firebase). showToast is exposed globally here.
-// ==========================================================================
-window.showToast = showToast;
