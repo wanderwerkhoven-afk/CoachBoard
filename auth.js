@@ -40,10 +40,13 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 let currentUser = null;
 let unsubscribeFirestore = null;
 let unsubscribeTeamListener = null;
+let unsubscribePlayersListener = null;
+let unsubscribeNotificationsListener = null;
 let isApplyingCloudUpdate = false;
 let cloudSyncTimeout = null;
 let currentTeamCode = null;
 let currentPendingInvite = null; // Als de gebruiker via ?invite=... binnenkomt
+const shownNotificationIds = new Set(); // Bijhouden welke coach-notificaties al getoond zijn
 
 // ─── Toast Helper ─────────────────────────────────────────────
 export function notifyToast(message, type = "info", duration = 3500) {
@@ -289,8 +292,6 @@ export async function fetchTeamDataByCode(code) {
 }
 window.fetchTeamDataByCode = fetchTeamDataByCode;
 
-let unsubscribePlayersListener = null;
-
 // ─── 5. Realtime Luisteren naar Team & Spelers ────────────────
 function listenToTeamUpdates(teamCode) {
   if (!teamCode || teamCode === currentTeamCode) return;
@@ -303,6 +304,10 @@ function listenToTeamUpdates(teamCode) {
   if (unsubscribePlayersListener) {
     unsubscribePlayersListener();
     unsubscribePlayersListener = null;
+  }
+  if (unsubscribeNotificationsListener) {
+    unsubscribeNotificationsListener();
+    unsubscribeNotificationsListener = null;
   }
 
   // 1. Luister naar coach-state updates (wedstrijden, opstellingen)
@@ -334,7 +339,53 @@ function listenToTeamUpdates(teamCode) {
       }
     });
   }, err => console.warn("Players listener snapshot:", err));
+
+  // 3. Luister naar coach-notificaties (last-minute afwezigheid e.d.)
+  const notifColRef = collection(db, "teams", teamCode, "notifications");
+  unsubscribeNotificationsListener = onSnapshot(notifColRef, (snapshot) => {
+    const authData = typeof window.getCoachBoardAuth === "function" ? window.getCoachBoardAuth() : null;
+    if (authData?.role !== "coach") return; // Alleen coach ontvangt notificaties
+    snapshot.docChanges().forEach(change => {
+      if (change.type !== "added" && change.type !== "modified") return;
+      const notif = change.doc.data();
+      const notifId = change.doc.id;
+      if (shownNotificationIds.has(notifId)) return;
+      shownNotificationIds.add(notifId);
+      // Toon de coach-melding
+      if (notif.type === "last_minute_absence") {
+        const matchDate = notif.matchDate || "";
+        const formattedDate = matchDate
+          ? matchDate.replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$3-$2-$1")
+          : "onbekende datum";
+        const msg = `⚠️ ${notif.playerName} heeft zijn beschikbaarheid voor ${notif.matchOpponent} (${formattedDate}) gewijzigd naar "Afwezig".`;
+        notifyToast(msg, "warning", 8000);
+      }
+    });
+  }, err => console.warn("Notifications listener:", err));
 }
+
+// ─── 5b. Schrijf last-minute afwezigheidsmelding naar Firestore ────
+window.writeLastMinuteAbsenceNotification = async function({ teamCode, playerId, playerName, matchId, matchOpponent, matchDate, previousStatus }) {
+  if (!teamCode || !playerId || !matchId) return;
+  try {
+    const notifId = `lm_${playerId}_${matchId}`;
+    const notifRef = doc(db, "teams", teamCode.toUpperCase().trim(), "notifications", notifId);
+    await setDoc(notifRef, {
+      type: "last_minute_absence",
+      playerId,
+      playerName,
+      matchId,
+      matchOpponent,
+      matchDate,
+      previousStatus,
+      newStatus: "absent",
+      timestamp: new Date().toISOString(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn("writeLastMinuteAbsenceNotification fout:", err);
+  }
+};
+
 
 // ─── 6. Initialiseer Gebruiker na Login ───────────────────────
 async function initUserFirestoreData(user) {

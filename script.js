@@ -1997,12 +1997,40 @@ function renderAvailability(){
       if(readonlyPlayer)b.disabled=true;
       b.addEventListener('click',()=>{
         if(isPlayerRole() && p.id!==currentPlayerId())return;
+        const previousStatus=m.availability[p.id];
         m.availability[p.id]=m.availability[p.id]===key?null:key;
         saveState();
         const labels={fit:'Hele wedstrijd',limited:'Halve wedstrijd',noPlay:'Niet spelen',absent:'Afwezig'};
         const current=m.availability[p.id];
         showToast(current?`${p.name}: ${labels[current]}.`:`Beschikbaarheid van ${p.name} is leeggemaakt.`,'success','Beschikbaarheid opgeslagen',1800);
         renderMatchDetail();
+
+        // Last-minute afwezigheid: speler wisselt naar 'afwezig' terwijl wedstrijd morgen is
+        if(current==='absent' && previousStatus && previousStatus!=='absent'){
+          const today=new Date(); today.setHours(0,0,0,0);
+          const tomorrow=new Date(today); tomorrow.setDate(today.getDate()+1);
+          const matchDay=m.date?new Date(m.date+'T00:00:00'):null;
+          if(matchDay && matchDay.getTime()===tomorrow.getTime()){
+            // Toon grappig popup-bericht aan de speler
+            if(isPlayerRole()){
+              showLastMinuteAbsencePopup(m,p.name);
+            }
+            // Stuur notificatie naar coach via Firestore
+            const auth=typeof window.getCoachBoardAuth==='function'?window.getCoachBoardAuth():null;
+            const teamCode=(auth?.teamCode||state.teamCode||'').toUpperCase().trim();
+            if(teamCode && typeof window.writeLastMinuteAbsenceNotification==='function'){
+              window.writeLastMinuteAbsenceNotification({
+                teamCode,
+                playerId:p.id,
+                playerName:p.name,
+                matchId:m.id,
+                matchOpponent:m.opponent||'Onbekend',
+                matchDate:m.date||'',
+                previousStatus
+              });
+            }
+          }
+        }
       });
       dots.appendChild(b);
     });
@@ -4996,6 +5024,31 @@ document.getElementById('savePlayerNameBtn')?.addEventListener('click',()=>{
 
   // Refresh all visible references to the player name.
   try{renderAll();}catch(e){}
+});
+
+// ─── Modal: Last-minute Afwezigheid Speler ─────────────────────
+function showLastMinuteAbsencePopup(match, playerName){
+  const modal = document.getElementById('lastMinuteAbsenceModal');
+  if(!modal) return;
+  const matchInfo = document.getElementById('lastMinuteMatchInfo');
+  if(matchInfo){
+    const opp = match?.opponent || 'de tegenstander';
+    const dt = match?.date ? formatDateNL(match.date) : 'morgen';
+    matchInfo.textContent = `Wedstrijd tegen ${opp} (${dt})`;
+  }
+  modal.classList.add('show');
+}
+function closeLastMinuteAbsencePopup(){
+  const modal = document.getElementById('lastMinuteAbsenceModal');
+  if(modal) modal.classList.remove('show');
+}
+window.showLastMinuteAbsencePopup = showLastMinuteAbsencePopup;
+window.closeLastMinuteAbsencePopup = closeLastMinuteAbsencePopup;
+
+document.getElementById('closeLastMinuteModalBtn')?.addEventListener('click', closeLastMinuteAbsencePopup);
+document.getElementById('lastMinuteUnderstoodBtn')?.addEventListener('click', closeLastMinuteAbsencePopup);
+document.getElementById('lastMinuteAbsenceModal')?.addEventListener('click', (e)=>{
+  if(e.target.id === 'lastMinuteAbsenceModal') closeLastMinuteAbsencePopup();
 });
 
 // ─── Modal: Speler Activeren / Uitnodigingslink Genereren ────
