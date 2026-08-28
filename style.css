@@ -3580,19 +3580,37 @@ body.role-player .level-filter-icon{
   display:none!important;
 }
 
-/* Niveaukleuren op opstelling/bench neutraliseren voor spelerweergave */
+/* Niveaukleuren op opstelling/bench neutraliseren voor spelerweergave -> Allemaal hoofdkleur */
+body.role-player .pitch .player::before,
+body.role-player .pitch .player.level-1::before,
+body.role-player .pitch .player.level-2::before,
+body.role-player .pitch .player.level-3::before{
+  background:var(--primary-color, #c62828)!important;
+  color:#fff!important;
+}
+
+body.role-player .pitch .player::after{
+  display:none!important;
+}
+
+body.role-player .preview-player .num,
+body.role-player .preview-player.level-1 .num,
+body.role-player .preview-player.level-2 .num,
+body.role-player .preview-player.level-3 .num{
+  background:var(--primary-color, #c62828)!important;
+  color:#fff!important;
+}
+
+body.role-player .bench-chip,
 body.role-player .bench-chip.level-1,
 body.role-player .bench-chip.level-2,
 body.role-player .bench-chip.level-3,
 body.role-player .player-tag.level-1,
 body.role-player .player-tag.level-2,
-body.role-player .player-tag.level-3,
-body.role-player .preview-player.level-1,
-body.role-player .preview-player.level-2,
-body.role-player .preview-player.level-3{
-  background:#f3f4f6!important;
-  color:#334155!important;
-  border-color:#dfe3e8!important;
+body.role-player .player-tag.level-3{
+  background:var(--primary-soft, #fdecec)!important;
+  color:var(--primary-color, #c62828)!important;
+  border-color:transparent!important;
 }
 
 /* Statistiek-grid opnieuw uitlijnen wanneer Niveau ontbreekt */
