@@ -39,11 +39,74 @@
     </button>
 
     <div class="auth-divider"><span>of</span></div>
-    <button type="button" class="auth-secondary" id="directPlayerCodeBtn" style="width:100%;font-size:15px;padding:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid #c62828;color:#c62828;background:#fff5f5;border-radius:12px;cursor:pointer;margin-bottom:12px">
-      <span>⚽</span>
-      <span>Ik ben speler (Inloggen met Teamcode)</span>
+
+    <form id="emailLoginForm" class="auth-email-form" onsubmit="return false;">
+      <label class="auth-label" for="loginEmail">E-mailadres</label>
+      <input type="email" class="auth-input" id="loginEmail" placeholder="naam@voorbeeld.nl" required autocomplete="email">
+      
+      <label class="auth-label" for="loginPassword">Wachtwoord</label>
+      <input type="password" class="auth-input" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+      
+      <button type="submit" class="auth-primary" id="emailLoginBtn" style="margin-top:10px;">Inloggen met E-mail</button>
+      <button type="button" class="auth-secondary" id="showRegisterBtn" style="margin-top:6px;">Nieuw account aanmaken</button>
+    </form>
+  </div>
+
+  <div class="auth-card" id="registerStep" hidden>
+    <div class="auth-step-kicker">Registreren</div>
+    <h1>Account aanmaken</h1>
+    <p class="auth-copy">Maak een CoachBoard account aan met e-mail en wachtwoord.</p>
+
+    <form id="emailRegisterForm" class="auth-email-form" onsubmit="return false;">
+      <label class="auth-label" for="registerEmail">E-mailadres</label>
+      <input type="email" class="auth-input" id="registerEmail" placeholder="naam@voorbeeld.nl" required autocomplete="email">
+      
+      <label class="auth-label" for="registerPassword">Wachtwoord (min. 6 tekens)</label>
+      <input type="password" class="auth-input" id="registerPassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+      
+      <button type="submit" class="auth-primary" id="submitRegisterBtn" style="margin-top:10px;">Account registreren</button>
+      <button type="button" class="auth-secondary" id="backToLoginFromRegBtn" style="margin-top:6px;">← Terug naar inloggen</button>
+    </form>
+  </div>
+
+  <div class="auth-card" id="inviteStep" hidden>
+    <div class="auth-step-kicker" style="background:#e8f5e9;color:#2e7d32">Uitnodiging ontvangen 🎉</div>
+    <h1 id="inviteWelcomeTitle">Welkom Speler!</h1>
+    <p class="auth-copy" id="inviteWelcomeSubtitle">Je coach wil je toevoegen aan het team. Koppel je account om toegang te krijgen.</p>
+
+    <div class="invite-badge-box" style="background:var(--surface,#f8fafc);border:1px solid var(--border,#e2e8f0);padding:14px;border-radius:12px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <div style="font-size:32px">⚽</div>
+      <div>
+        <div style="font-size:13px;color:var(--text-muted,#64748b)">Team</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text,#0f172a)" id="inviteTeamName">—</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:13px;color:var(--text-muted,#64748b)">Spelersprofiel</div>
+        <div style="font-size:16px;font-weight:700;color:#c62828" id="invitePlayerName">—</div>
+      </div>
+    </div>
+
+    <button type="button" class="auth-google-btn" id="inviteGoogleBtn">
+      <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+      </svg>
+      <span>Koppelen met Google</span>
     </button>
-    <div class="auth-footnote">Geen Gmail of account nodig voor spelers.</div>
+
+    <div class="auth-divider"><span>of koppel met e-mail</span></div>
+
+    <form id="inviteEmailForm" onsubmit="return false;">
+      <label class="auth-label" for="inviteEmail">E-mailadres</label>
+      <input type="email" class="auth-input" id="inviteEmail" placeholder="naam@voorbeeld.nl" required autocomplete="email">
+      
+      <label class="auth-label" for="invitePassword">Wachtwoord (min. 6 tekens)</label>
+      <input type="password" class="auth-input" id="invitePassword" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+      
+      <button type="submit" class="auth-primary" id="inviteEmailSubmitBtn" style="margin-top:10px;">Account aanmaken &amp; Koppelen</button>
+    </form>
   </div>
 
   <div class="auth-card" id="roleStep" hidden>
@@ -52,10 +115,10 @@
     <p class="auth-copy">Dit bepaalt welke functies je in CoachBoard ziet.</p>
     <div class="role-grid">
       <button class="role-choice" data-role-choice="coach">
-        <span class="role-icon">👤</span><strong>Coach</strong><small>Beheer spelers, wedstrijden en opstellingen.</small>
+        <span class="role-icon">📋</span><strong>Coach</strong><small>Beheer spelers, wedstrijden en opstellingen.</small>
       </button>
       <button class="role-choice" data-role-choice="player">
-        <span class="role-icon">👤</span><strong>Speler</strong><small>Bekijk je team en geef beschikbaarheid door.</small>
+        <span class="role-icon">⚽</span><strong>Speler</strong><small>Koppel met teamcode of uitnodiging.</small>
       </button>
     </div>
     <button class="auth-secondary" id="authBackToLogin">← Terug</button>
@@ -64,7 +127,7 @@
   <div class="auth-card" id="playerCodeStep" hidden>
     <div class="auth-step-kicker">Speler koppelen</div>
     <h1>Koppel aan je team</h1>
-    <p class="auth-copy">Voer de teamcode van je coach in en kies daarna je eigen spelersprofiel.</p>
+    <p class="auth-copy">Voer de teamcode van je coach in of vraag je coach om een persoonlijke uitnodigingslink.</p>
 
     <label class="auth-label" for="playerTeamCode">Teamcode</label>
     <input class="auth-input auth-code-input" id="playerTeamCode" maxlength="8" placeholder="KGB45" autocomplete="off">
@@ -82,7 +145,7 @@
     </div>
 
     <div id="playerTeamCodeHint" class="auth-teamcode-hint">
-      Vul eerst de juiste teamcode in. Daarna verschijnen alleen de spelers van dat team.
+      Vul de teamcode in van je coach.
     </div>
 
     <button class="auth-primary" id="joinTeamBtn" disabled>Team koppelen</button>
@@ -625,6 +688,30 @@ WhatsApp
     <button class="settings-logout" id="logoutBtn">Uitloggen</button>
   </div>
 </div>
+
+<!-- ─── Modal: Speler Activeringslink ─── -->
+<div class="invite-modal-backdrop" id="playerInviteModal">
+  <div class="invite-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:18px;font-weight:800;color:#0f172a" id="inviteModalTitle">Speler activeren</div>
+      <button type="button" class="settings-close" id="closeInviteModalBtn" style="position:static">×</button>
+    </div>
+    
+    <p style="font-size:13px;color:#64748b;margin:0 0 14px;line-height:1.4">
+      Stuur deze unieke link naar <strong id="inviteModalPlayerName" style="color:#0f172a">de speler</strong>. Zodra de speler de link opent, kan hij/zij direct een account koppelen.
+    </p>
+
+    <div class="invite-link-box">
+      <input type="text" class="invite-link-input" id="inviteGeneratedLink" readonly value="Link genereren...">
+      <button type="button" class="invite-copy-btn" id="copyInviteLinkBtn">Kopieer</button>
+    </div>
+
+    <button type="button" class="invite-share-btn" id="whatsappInviteBtn">
+      <span>💬 Deel via WhatsApp</span>
+    </button>
+  </div>
+</div>
+
 <script src="script.js"></script>
 <script type="module" src="auth.js"></script>
 </body>

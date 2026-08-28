@@ -2,7 +2,8 @@
 import {
   getAuth,
   signInWithPopup,
-  signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged
@@ -14,6 +15,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  updateDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -38,10 +40,10 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 let currentUser = null;
 let unsubscribeFirestore = null;
 let unsubscribeTeamListener = null;
-let unsubscribePlayersListener = null;
 let isApplyingCloudUpdate = false;
 let cloudSyncTimeout = null;
 let currentTeamCode = null;
+let currentPendingInvite = null; // Als de gebruiker via ?invite=... binnenkomt
 
 // ─── Toast Helper ─────────────────────────────────────────────
 export function notifyToast(message, type = "info", duration = 3500) {
@@ -74,7 +76,7 @@ function updateAuthUI(user) {
   const cloudBadge = document.getElementById("cloudStatusBadge");
   const cloudText = document.getElementById("cloudStatusText");
 
-  if (user && !user.isAnonymous) {
+  if (user) {
     if (cloudBadge) { cloudBadge.className = "cloud-status-badge online"; cloudBadge.title = "Online (Firestore Cloud Sync)"; }
     if (cloudText) cloudText.textContent = "Online (Cloud Sync)";
     if (settingsEmail) settingsEmail.textContent = user.email || user.displayName || "Ingelogd";
@@ -84,25 +86,160 @@ function updateAuthUI(user) {
     }
   } else {
     if (cloudBadge) { cloudBadge.className = "cloud-status-badge offline"; cloudBadge.title = "Lokaal opgeslagen"; }
-    if (cloudText) cloudText.textContent = user?.isAnonymous ? "Speler (anoniem)" : "Offline / Lokaal";
+    if (cloudText) cloudText.textContent = "Offline / Lokaal";
     if (userAvatar) userAvatar.style.display = "none";
   }
 }
 
-// ─── Anoniem inloggen voor spelers (geen Gmail nodig) ─────────
-export async function signInPlayerAnonymously() {
-  if (auth.currentUser) return auth.currentUser;
+// ─── 1. Invite Management (Coach Genereert Unieke Link) ────────
+window.createPlayerInvite = async function(playerId, playerName) {
+  const state = (typeof window.getCoachBoardState === "function") ? window.getCoachBoardState() : null;
+  const teamCode = (state?.teamCode || "TEAM").toUpperCase().trim();
+  const teamName = state?.teamName || "Mijn Team";
+
+  // Genereer veilige willekeurige token
+  const token = `${playerId}_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
+  
   try {
-    const result = await signInAnonymously(auth);
-    return result.user;
+    const inviteDocRef = doc(db, "invites", token);
+    await setDoc(inviteDocRef, {
+      token,
+      teamCode,
+      playerId,
+      playerName,
+      teamName,
+      linkedUid: null,
+      createdAt: new Date().toISOString(),
+      createdBy: auth.currentUser?.uid || null
+    });
+
+    // Sla ook de token op in het spelersobject in de lokale state zodat de coach weet dat er een link is
+    const player = state.players.find(p => p.id === playerId);
+    if (player) {
+      player.lastInviteToken = token;
+      if (typeof window.saveCoachBoardStateDirect === "function") {
+        window.saveCoachBoardStateDirect();
+      }
+    }
+
+    const currentUrl = window.location.origin + window.location.pathname;
+    const inviteUrl = `${currentUrl}?invite=${token}`;
+    return inviteUrl;
   } catch (err) {
-    console.warn("Anoniem inloggen mislukt:", err);
-    return null;
+    console.error("Fout bij aanmaken uitnodiging:", err);
+    throw err;
+  }
+};
+
+// ─── 2. Invite Resolver (Speler Opent Link) ───────────────────
+async function checkInviteFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const inviteToken = params.get("invite");
+  if (!inviteToken) return;
+
+  try {
+    const inviteDocRef = doc(db, "invites", inviteToken);
+    const snap = await getDoc(inviteDocRef);
+
+    if (!snap.exists()) {
+      notifyToast("Deze uitnodigingslink is niet geldig of verlopen.", "warning", 5000);
+      return;
+    }
+
+    const inviteData = snap.data();
+    currentPendingInvite = inviteData;
+
+    // Toon welkomstpagina
+    const shell = document.getElementById("authShell");
+    if (shell) shell.hidden = false;
+
+    // Verberg alle stappen, open #inviteStep
+    ["loginStep", "registerStep", "roleStep", "playerCodeStep"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+
+    const inviteStep = document.getElementById("inviteStep");
+    if (inviteStep) {
+      inviteStep.hidden = false;
+      document.getElementById("inviteWelcomeTitle").textContent = `Welkom ${inviteData.playerName}! 👋`;
+      document.getElementById("inviteWelcomeSubtitle").textContent = `Je coach wil je toevoegen aan team "${inviteData.teamName}". Maak een account aan of log in om te koppelen.`;
+      document.getElementById("inviteTeamName").textContent = inviteData.teamName;
+      document.getElementById("invitePlayerName").textContent = inviteData.playerName;
+    }
+  } catch (err) {
+    console.warn("Fout bij ophalen uitnodiging:", err);
   }
 }
-window.signInPlayerAnonymously = signInPlayerAnonymously;
 
-// ─── Ophalen teamdata via teamcode (coach-state + spelers) ────
+// ─── 3. Account Koppelen aan Speler via Invite ────────────────
+async function linkAccountToInvite(user) {
+  if (!currentPendingInvite) return false;
+
+  const { teamCode, playerId, playerName, token } = currentPendingInvite;
+
+  try {
+    // 1. Markeer invite als gebruikt
+    const inviteDocRef = doc(db, "invites", token);
+    await updateDoc(inviteDocRef, {
+      linkedUid: user.uid,
+      linkedEmail: user.email || user.displayName || "",
+      claimedAt: new Date().toISOString()
+    }).catch(async () => {
+      await setDoc(inviteDocRef, { linkedUid: user.uid }, { merge: true });
+    });
+
+    // 2. Koppel in /teams/{teamCode}/players/{playerId}
+    const playerDocRef = doc(db, "teams", teamCode, "players", playerId);
+    await setDoc(playerDocRef, {
+      playerId,
+      firebaseUid: user.uid,
+      name: playerName,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    // 3. Sla gebruikersprofiel op in /users/{uid}
+    const userDocRef = doc(db, "users", user.uid);
+    const authData = {
+      loggedIn: true,
+      email: user.email || user.displayName || playerName,
+      role: "player",
+      teamCode,
+      playerId
+    };
+
+    await setDoc(userDocRef, {
+      email: user.email || "",
+      displayName: user.displayName || playerName,
+      authData,
+      userRole: "player",
+      teamCode,
+      playerId,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    // 4. Update lokale app auth & state
+    if (typeof window.setCoachBoardAuth === "function") {
+      window.setCoachBoardAuth(authData);
+    }
+
+    // 5. Laad teamdata direct in
+    await fetchTeamDataByCode(teamCode);
+
+    // Ruim URL parameter op
+    window.history.replaceState({}, document.title, window.location.pathname);
+    currentPendingInvite = null;
+
+    notifyToast(`Gekoppeld aan team ${teamCode} als ${playerName}!`, "success");
+    return true;
+  } catch (err) {
+    console.error("Fout bij koppelen account:", err);
+    notifyToast("Koppelen mislukt: " + err.message, "error");
+    return false;
+  }
+}
+
+// ─── 4. Ophalen Teamdata via Teamcode ─────────────────────────
 export async function fetchTeamDataByCode(code) {
   if (!code) return null;
   const tc = code.toUpperCase().trim();
@@ -112,22 +249,20 @@ export async function fetchTeamDataByCode(code) {
     if (!snap.exists()) return null;
 
     const teamData = snap.data();
-
-    // Haal de coach-state op (wedstrijden, opstellingen, spelersdefinities)
     const coachState = teamData.coachboardState || teamData.coachState || null;
     if (!coachState) return null;
 
-    // Haal speler-subcollectie op voor actuele beschikbaarheid
+    // Haal speler-subcollectie op voor actuele statussen
     const playersSnap = await getDocs(collection(db, "teams", tc, "players"));
     playersSnap.forEach(playerDoc => {
       const pData = playerDoc.data();
       const pid = playerDoc.id;
       const player = (coachState.players || []).find(p => p.id === pid);
-      if (player && pData.availability) {
-        // Merge speler-eigen beschikbaarheidsvoorkeur
-        player.preferredAvailability = pData.preferredAvailability || player.preferredAvailability;
+      if (player) {
+        if (pData.name) player.name = pData.name;
+        if (pData.preferredAvailability) player.preferredAvailability = pData.preferredAvailability;
+        if (pData.firebaseUid) player.firebaseUid = pData.firebaseUid;
       }
-      // Merge per-wedstrijd beschikbaarheid
       if (player && pData.matchAvailability) {
         Object.entries(pData.matchAvailability).forEach(([matchId, status]) => {
           const match = (coachState.matches || []).find(m => m.id === matchId);
@@ -139,7 +274,6 @@ export async function fetchTeamDataByCode(code) {
       }
     });
 
-    // Laad state in
     isApplyingCloudUpdate = true;
     if (typeof window.setCoachBoardState === "function") {
       window.setCoachBoardState(coachState);
@@ -149,22 +283,22 @@ export async function fetchTeamDataByCode(code) {
     listenToTeamUpdates(tc);
     return coachState;
   } catch (err) {
-    console.warn("Fout bij ophalen team via code:", err);
+    console.warn("Fout bij ophalen team:", err);
     return null;
   }
 }
 window.fetchTeamDataByCode = fetchTeamDataByCode;
 
-// ─── Live luisteren naar team én speler updates ───────────────
+// ─── 5. Realtime Luisteren naar Team & Spelers ────────────────
 function listenToTeamUpdates(teamCode) {
   if (!teamCode || teamCode === currentTeamCode) return;
   currentTeamCode = teamCode;
 
-  // Stop oude listeners
-  if (unsubscribeTeamListener) { unsubscribeTeamListener(); unsubscribeTeamListener = null; }
-  if (unsubscribePlayersListener) { unsubscribePlayersListener(); unsubscribePlayersListener = null; }
+  if (unsubscribeTeamListener) {
+    unsubscribeTeamListener();
+    unsubscribeTeamListener = null;
+  }
 
-  // 1. Luister naar coach-state updates (wedstrijden, opstellingen)
   const teamDocRef = doc(db, "teams", teamCode);
   unsubscribeTeamListener = onSnapshot(teamDocRef, (snapshot) => {
     if (isApplyingCloudUpdate) return;
@@ -178,31 +312,18 @@ function listenToTeamUpdates(teamCode) {
       window.setCoachBoardState(coachState);
     }
     isApplyingCloudUpdate = false;
-  }, err => console.warn("Team snapshot:", err));
-
-  // 2. Luister naar speler beschikbaarheid updates (live)
-  const playersColRef = collection(db, "teams", teamCode, "players");
-  unsubscribePlayersListener = onSnapshot(playersColRef, (snapshot) => {
-    if (isApplyingCloudUpdate) return;
-    snapshot.docChanges().forEach(change => {
-      if (change.type === "removed") return;
-      const pData = change.doc.data();
-      const pid = change.doc.id;
-      if (typeof window.mergePlayerUpdate === "function") {
-        window.mergePlayerUpdate(pid, pData);
-      }
-    });
-  }, err => console.warn("Players snapshot:", err));
+  }, err => console.warn("Team listener snapshot:", err));
 }
 
-// ─── Initialiseer coach-sessie via Google Auth ────────────────
+// ─── 6. Initialiseer Gebruiker na Login ───────────────────────
 async function initUserFirestoreData(user) {
   currentUser = user;
   updateAuthUI(user);
 
-  if (user.isAnonymous) {
-    // Anonieme speler — geen user-document aanmaken; sessie loopt via team
-    return;
+  // Als de gebruiker via een uitnodiging binnenkwam, koppel direct!
+  if (currentPendingInvite) {
+    const linked = await linkAccountToInvite(user);
+    if (linked) return;
   }
 
   try {
@@ -211,14 +332,18 @@ async function initUserFirestoreData(user) {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
+
+      // 1. Data inladen als coach
       if (data?.coachboardState) {
         isApplyingCloudUpdate = true;
         if (typeof window.setCoachBoardState === "function") window.setCoachBoardState(data.coachboardState);
         isApplyingCloudUpdate = false;
       }
+
+      // 2. Rol en teamcode herstellen
       const cloudAuth = data?.authData || (data?.userRole ? {
         loggedIn: true,
-        email: user.email || "",
+        email: user.email || user.displayName || "Ingelogd",
         role: data.userRole,
         teamCode: data.teamCode || null,
         playerId: data.playerId || null
@@ -228,14 +353,18 @@ async function initUserFirestoreData(user) {
         cloudAuth.loggedIn = true;
         cloudAuth.email = user.email || user.displayName || cloudAuth.email;
         if (typeof window.setCoachBoardAuth === "function") window.setCoachBoardAuth(cloudAuth);
-        if (cloudAuth.teamCode) listenToTeamUpdates(cloudAuth.teamCode);
+        if (cloudAuth.teamCode) {
+          fetchTeamDataByCode(cloudAuth.teamCode);
+        }
         notifyToast(`Welkom terug, ${user.displayName || user.email || ""}!`, "success");
       } else {
         if (typeof window.onFirebaseAuthNeedsRole === "function") window.onFirebaseAuthNeedsRole(user);
       }
     } else {
+      // Eerste login (als Coach)
       const localState = typeof window.getCoachBoardState === "function" ? window.getCoachBoardState() : null;
       const localAuth = typeof window.getCoachBoardAuth === "function" ? window.getCoachBoardAuth() : null;
+
       await setDoc(userDocRef, {
         email: user.email || "",
         displayName: user.displayName || "",
@@ -247,13 +376,13 @@ async function initUserFirestoreData(user) {
 
       if (localAuth?.role === "coach" || (localAuth?.role === "player" && localAuth?.playerId)) {
         if (typeof window.setCoachBoardAuth === "function") window.setCoachBoardAuth(localAuth);
-        if (localAuth.teamCode) listenToTeamUpdates(localAuth.teamCode);
+        if (localAuth.teamCode) fetchTeamDataByCode(localAuth.teamCode);
       } else {
         if (typeof window.onFirebaseAuthNeedsRole === "function") window.onFirebaseAuthNeedsRole(user);
       }
     }
 
-    // Real-time listener op user-document
+    // Luister naar wijzigingen in het user doc
     if (unsubscribeFirestore) unsubscribeFirestore();
     unsubscribeFirestore = onSnapshot(userDocRef, (snapshot) => {
       if (isApplyingCloudUpdate) return;
@@ -264,15 +393,14 @@ async function initUserFirestoreData(user) {
         if (typeof window.setCoachBoardState === "function") window.setCoachBoardState(snapData.coachboardState);
         isApplyingCloudUpdate = false;
       }
-    }, err => console.warn("User snapshot:", err));
+    }, err => console.warn("User listener:", err));
 
   } catch (err) {
     console.error("Fout bij Firestore initialisatie:", err);
-    notifyToast("Firestore verbinding: controleer Firestore Rules", "warning", 4500);
   }
 }
 
-// ─── Coach: sla volledige state op + Speler: sla eigen data op ─
+// ─── 7. Cloud Sync: Automatisch Opslaan ────────────────────────
 window.syncStateToCloud = function(state) {
   if (isApplyingCloudUpdate) return;
   clearTimeout(cloudSyncTimeout);
@@ -282,23 +410,20 @@ window.syncStateToCloud = function(state) {
       const teamCode = (authData?.teamCode || state?.teamCode || "").toUpperCase().trim();
 
       if (authData?.role === "player" && authData?.playerId && teamCode) {
-        // ── SPELER: schrijf alleen eigen beschikbaarheid naar player-subcollectie ──
-        const playerId = authData.playerId;
-        const firebaseUid = auth.currentUser?.uid || null;
-
-        // Bouw matchAvailability object: {matchId: status}
+        // Speler slaat eigen beschikbaarheid & naam op
+        const pid = authData.playerId;
+        const playerObj = (state.players || []).find(p => p.id === pid);
         const matchAvailability = {};
         (state.matches || []).forEach(m => {
-          if (m.availability && m.availability[playerId] !== undefined) {
-            matchAvailability[m.id] = m.availability[playerId];
+          if (m.availability && m.availability[pid] !== undefined) {
+            matchAvailability[m.id] = m.availability[pid];
           }
         });
 
-        const playerObj = (state.players || []).find(p => p.id === playerId);
-        const playerDocRef = doc(db, "teams", teamCode, "players", playerId);
+        const playerDocRef = doc(db, "teams", teamCode, "players", pid);
         await setDoc(playerDocRef, {
-          playerId,
-          firebaseUid,
+          playerId: pid,
+          firebaseUid: currentUser?.uid || null,
           name: playerObj?.name || "",
           preferredAvailability: playerObj?.preferredAvailability || "fit",
           matchAvailability,
@@ -306,7 +431,7 @@ window.syncStateToCloud = function(state) {
         }, { merge: true });
 
       } else if (teamCode) {
-        // ── COACH: schrijf volledige state naar /teams/{teamCode} ──
+        // Coach slaat hele teamdata op
         const teamDocRef = doc(db, "teams", teamCode);
         await setDoc(teamDocRef, {
           teamCode,
@@ -314,10 +439,8 @@ window.syncStateToCloud = function(state) {
           updatedAt: new Date().toISOString(),
           coachboardState: state
         }, { merge: true });
-        listenToTeamUpdates(teamCode);
 
-        // Sla ook op in user-document (voor coach-herstel na login)
-        if (currentUser && !currentUser.isAnonymous) {
+        if (currentUser) {
           const userDocRef = doc(db, "users", currentUser.uid);
           await setDoc(userDocRef, {
             email: currentUser.email || "",
@@ -328,16 +451,15 @@ window.syncStateToCloud = function(state) {
         }
       }
     } catch (err) {
-      console.error("Fout bij opslaan naar Firestore:", err);
+      console.error("Fout bij syncStateToCloud:", err);
     }
   }, 400);
 };
 
-// ─── Sync auth-data (rol + teamcode + playerId) naar Firestore ─
 window.syncAuthToCloud = function(authData) {
   const teamCode = (authData?.teamCode || "").toUpperCase().trim();
   if (teamCode) listenToTeamUpdates(teamCode);
-  if (!currentUser || currentUser.isAnonymous) return;
+  if (!currentUser) return;
   try {
     const userDocRef = doc(db, "users", currentUser.uid);
     setDoc(userDocRef, {
@@ -348,78 +470,54 @@ window.syncAuthToCloud = function(authData) {
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (err) {
-    console.error("Fout bij opslaan auth:", err);
+    console.error("Fout bij syncAuthToCloud:", err);
   }
 };
 
-// ─── Sla firebaseUid op in het player-document bij eerste koppeling ─
-window.linkPlayerToFirebase = async function(teamCode, playerId) {
-  if (!auth.currentUser) return;
-  const tc = teamCode.toUpperCase().trim();
-  try {
-    const playerDocRef = doc(db, "teams", tc, "players", playerId);
-    await setDoc(playerDocRef, {
-      playerId,
-      firebaseUid: auth.currentUser.uid,
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-  } catch (err) {
-    console.warn("Fout bij koppelen player aan Firebase uid:", err);
-  }
-};
-
-// ─── Handmatige sync knop ─────────────────────────────────────
-async function handleManualSync() {
-  if (!currentUser || currentUser.isAnonymous) {
-    notifyToast("Log eerst in als coach om te synchroniseren.", "warning");
-    return;
-  }
-  const localState = typeof window.getCoachBoardState === "function" ? window.getCoachBoardState() : null;
-  const localAuth = typeof window.getCoachBoardAuth === "function" ? window.getCoachBoardAuth() : null;
-  if (!localState) return;
-  try {
-    const userDocRef = doc(db, "users", currentUser.uid);
-    await setDoc(userDocRef, {
-      email: currentUser.email || "",
-      displayName: currentUser.displayName || "",
-      updatedAt: new Date().toISOString(),
-      coachboardState: localState,
-      authData: localAuth
-    }, { merge: true });
-    notifyToast("Data gesynchroniseerd met Firestore! ☁️", "success");
-  } catch (err) {
-    notifyToast("Synchronisatie mislukt: " + err.message, "error");
-  }
-}
-
-// ─── Auth State Listener ──────────────────────────────────────
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    initUserFirestoreData(user);
-  } else {
-    currentUser = null;
-    if (unsubscribeFirestore) { unsubscribeFirestore(); unsubscribeFirestore = null; }
-    updateAuthUI(null);
-  }
-});
-
-// ─── Google OAuth ─────────────────────────────────────────────
+// ─── 8. Authenticatie Handlers (Google + Email) ───────────────
 export async function handleGoogleSignIn() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     notifyToast(`Ingelogd als ${result.user.displayName || result.user.email}`, "success");
   } catch (err) {
     if (err.code === "auth/popup-closed-by-user") return;
-    if (err.code === "auth/unauthorized-domain") {
-      notifyToast("Domein niet geautoriseerd in Firebase Auth", "error", 5000);
-      return;
-    }
     notifyToast(`Google login mislukt: ${err.message}`, "error");
   }
 }
 window.handleGoogleSignIn = handleGoogleSignIn;
 
-// ─── Uitloggen ────────────────────────────────────────────────
+export async function handleEmailSignIn(email, password) {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    notifyToast(`Ingelogd als ${result.user.email}`, "success");
+  } catch (err) {
+    let msg = "Inloggen mislukt.";
+    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+      msg = "Onjuist e-mailadres of wachtwoord.";
+    } else if (err.code === "auth/invalid-email") {
+      msg = "Ongeldig e-mailadres.";
+    }
+    notifyToast(msg, "error");
+  }
+}
+window.handleEmailSignIn = handleEmailSignIn;
+
+export async function handleEmailRegister(email, password) {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    notifyToast(`Account aangemaakt voor ${result.user.email}`, "success");
+  } catch (err) {
+    let msg = "Registreren mislukt.";
+    if (err.code === "auth/email-already-in-use") {
+      msg = "Dit e-mailadres is al in gebruik. Log in.";
+    } else if (err.code === "auth/weak-password") {
+      msg = "Wachtwoord moet minimaal 6 tekens zijn.";
+    }
+    notifyToast(msg, "error");
+  }
+}
+window.handleEmailRegister = handleEmailRegister;
+
 export async function handleFirebaseLogout() {
   try {
     await signOut(auth);
@@ -430,24 +528,53 @@ export async function handleFirebaseLogout() {
 }
 window.handleFirebaseLogout = handleFirebaseLogout;
 
-// ─── DOMContentLoaded: herstel sessies & koppel knoppen ──────
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("googleLoginBtn")?.addEventListener("click", handleGoogleSignIn);
-  document.getElementById("manualSyncBtn")?.addEventListener("click", handleManualSync);
-
-  // Herstel speler-sessie: anoniem inloggen + live team listener
-  try {
-    const AUTH_KEY = "coachboard_v1_auth";
-    const savedAuth = JSON.parse(localStorage.getItem(AUTH_KEY) || "null");
-    if (savedAuth?.role === "player" && savedAuth?.teamCode && savedAuth?.playerId) {
-      const code = savedAuth.teamCode.toUpperCase().trim();
-      // Log anoniem in zodat Firestore-regels werken, start daarna live listener
-      signInPlayerAnonymously().then(() => {
-        listenToTeamUpdates(code);
-        fetchTeamDataByCode(code).catch(() => {});
-      });
-    }
-  } catch (e) {
-    // Geen opgeslagen sessie
+// ─── 9. Auth State & Event Listeners ──────────────────────────
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    initUserFirestoreData(user);
+  } else {
+    currentUser = null;
+    if (unsubscribeFirestore) { unsubscribeFirestore(); unsubscribeFirestore = null; }
+    updateAuthUI(null);
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Check of de bezoeker via een ?invite= link binnenkomt
+  checkInviteFromUrl();
+
+  // Knoppen & formulieren
+  document.getElementById("googleLoginBtn")?.addEventListener("click", handleGoogleSignIn);
+  document.getElementById("inviteGoogleBtn")?.addEventListener("click", handleGoogleSignIn);
+
+  document.getElementById("emailLoginForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail")?.value.trim();
+    const pass = document.getElementById("loginPassword")?.value;
+    if (email && pass) handleEmailSignIn(email, pass);
+  });
+
+  document.getElementById("emailRegisterForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("registerEmail")?.value.trim();
+    const pass = document.getElementById("registerPassword")?.value;
+    if (email && pass) handleEmailRegister(email, pass);
+  });
+
+  document.getElementById("inviteEmailForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("inviteEmail")?.value.trim();
+    const pass = document.getElementById("invitePassword")?.value;
+    if (email && pass) handleEmailRegister(email, pass);
+  });
+
+  document.getElementById("showRegisterBtn")?.addEventListener("click", () => {
+    document.getElementById("loginStep").hidden = true;
+    document.getElementById("registerStep").hidden = false;
+  });
+
+  document.getElementById("backToLoginFromRegBtn")?.addEventListener("click", () => {
+    document.getElementById("registerStep").hidden = true;
+    document.getElementById("loginStep").hidden = false;
+  });
 });

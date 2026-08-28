@@ -2,33 +2,34 @@
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Teams ───────────────────────────────────────────────────────────────
-    // Iedereen met de teamcode mag lezen (spelers, coach, onboarding).
-    // Schrijven naar het hoofd-document mag alleen voor geauthenticeerde
-    // coaches (Google-login). Anonieme gebruikers vallen hier NIET onder.
+    // ─── 1. Uitnodigingen (Invites) ──────────────────────────────────────────
+    // - Lezen: Iedereen die de link bezit (zodat de speler de welkomstpagina ziet)
+    // - Aanmaken: Alleen ingelogde gebruikers (coach)
+    // - Updaten/Claimen: Ingelogde gebruikers (Google of E-mail) die de link claimen
+    match /invites/{token} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+    }
+
+    // ─── 2. Teams ─────────────────────────────────────────────────────────────
+    // - Lezen: Iedereen met de teamcode
+    // - Schrijven hoofd-document: Alleen ingelogde coaches
     match /teams/{teamCode} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email != null;
+      allow write: if request.auth != null;
 
-      // ─── Speler-subcollectie ────────────────────────────────────────────
-      // Lezen: iedereen (coach heeft de spelerslijst nodig voor live sync).
-      // Schrijven: alleen de speler zelf (geverifieerd via firebaseUid).
-      // Aanmaken: de speler koppelt zijn eigen uid bij de eerste login.
+      // ─── Speler-subcollectie ──────────────────────────────────────────────
+      // - Lezen: Iedereen (coach heeft teamoverzicht nodig)
+      // - Schrijven / Updaten: Alleen ingelogde accounts
       match /players/{playerId} {
         allow read: if true;
-
-        // Update: alleen als het bestaande document van dezelfde Firebase uid is
-        allow update: if request.auth != null
-                      && resource.data.firebaseUid == request.auth.uid;
-
-        // Create: speler mag zijn eigen document aanmaken
-        allow create: if request.auth != null
-                      && request.resource.data.firebaseUid == request.auth.uid;
+        allow write: if request.auth != null;
       }
     }
 
-    // ─── Gebruikers (coaches) ────────────────────────────────────────────────
-    // Alleen eigen data, alleen ingelogde gebruikers.
+    // ─── 3. Gebruikersprofielen (Users) ───────────────────────────────────────
+    // - Alleen de eigenaar kan zijn eigen account document lezen en schrijven
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

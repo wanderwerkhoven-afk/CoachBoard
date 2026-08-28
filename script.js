@@ -1455,6 +1455,11 @@ function renderPlayers(){
           </div>
 
           <div class="player-icon-actions">
+            ${isPlayerRole() ? '' : `
+              <button class="player-icon-btn invite-btn ${p.firebaseUid ? 'is-active' : ''}" data-invite-player="${p.id}" data-player-name="${esc(p.name)}" title="${p.firebaseUid ? 'Account gekoppeld (klik om opnieuw te delen)' : 'Activeer speler: genereer uitnodigingslink'}" aria-label="Speler activeren">
+                ${p.firebaseUid ? '✓' : '⚡'}
+              </button>
+            `}
             <button class="player-icon-btn edit" data-edit="${p.id}" title="Speler bewerken" aria-label="Speler bewerken">
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m4 16.5-.7 4.2 4.2-.7L18.8 8.7l-3.5-3.5L4 16.5Zm13-13 3.5 3.5 1-1a1.4 1.4 0 0 0 0-2l-1.5-1.5a1.4 1.4 0 0 0-2 0l-1 1Z" fill="currentColor"/></svg>
             </button>
@@ -1465,6 +1470,9 @@ function renderPlayers(){
 
   box.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openPlayerEditor(b.dataset.edit)));
   box.querySelectorAll('[data-player-open]').forEach(b=>b.addEventListener('click',()=>openPlayerStats(b.dataset.playerOpen)));
+  box.querySelectorAll('[data-invite-player]').forEach(b=>b.addEventListener('click',()=>{
+    openPlayerInviteModal(b.dataset.invitePlayer, b.dataset.playerName);
+  }));
 }
 
 
@@ -4993,6 +5001,62 @@ document.getElementById('savePlayerNameBtn')?.addEventListener('click',()=>{
 
   // Refresh all visible references to the player name.
   try{renderAll();}catch(e){}
+});
+
+// ─── Modal: Speler Activeren / Uitnodigingslink Genereren ────
+async function openPlayerInviteModal(playerId, playerName){
+  const modal = document.getElementById('playerInviteModal');
+  const title = document.getElementById('inviteModalTitle');
+  const nameEl = document.getElementById('inviteModalPlayerName');
+  const input = document.getElementById('inviteGeneratedLink');
+  const copyBtn = document.getElementById('copyInviteLinkBtn');
+  const whatsappBtn = document.getElementById('whatsappInviteBtn');
+  if(!modal || !input) return;
+
+  if(title) title.textContent = `Uitnodiging voor ${playerName}`;
+  if(nameEl) nameEl.textContent = playerName;
+  input.value = 'Unieke link genereren in de cloud... ⏳';
+  modal.classList.add('show');
+
+  try {
+    let link = '';
+    if(typeof window.createPlayerInvite === 'function'){
+      link = await window.createPlayerInvite(playerId, playerName);
+    } else {
+      const currentUrl = window.location.origin + window.location.pathname;
+      link = `${currentUrl}?invite=${playerId}_demo`;
+    }
+    input.value = link;
+
+    if(whatsappBtn){
+      const text = encodeURIComponent(`Hoi ${playerName}! 👋 Je coach wil je toevoegen aan ons team in CoachBoard. Klik op deze link om je account te koppelen:\n\n${link}`);
+      whatsappBtn.onclick = () => {
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+      };
+    }
+
+    if(copyBtn){
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(link);
+          showToast(`Link voor ${playerName} gekopieerd naar klembord!`, 'success', 'Link gekopieerd');
+          copyBtn.textContent = 'Gekopieerd!';
+          setTimeout(() => copyBtn.textContent = 'Kopieer', 2000);
+        } catch(e) {
+          showToast('Selecteer en kopieer de link handmatig.', 'info');
+        }
+      };
+    }
+  } catch(err) {
+    input.value = 'Fout bij genereren van link. Controleer je internetverbinding.';
+  }
+}
+
+document.getElementById('closeInviteModalBtn')?.addEventListener('click', () => {
+  document.getElementById('playerInviteModal')?.classList.remove('show');
+});
+document.getElementById('playerInviteModal')?.addEventListener('click', (e) => {
+  if(e.target === e.currentTarget) e.currentTarget.classList.remove('show');
 });
 
 
