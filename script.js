@@ -133,6 +133,9 @@ function saveState(){
     window.syncStateToCloud(state);
   }
   renderAll();
+  if(document.getElementById('matchDetail')?.classList.contains('on')){
+    renderMatchDetail();
+  }
 }
 window.getCoachBoardState=function(){return state};
 window.setCoachBoardState=function(newState){
@@ -177,6 +180,10 @@ window.mergePlayerUpdate = function(playerId, playerData) {
   if (changed) {
     localStorage.setItem(KEY, JSON.stringify(state));
     renderAll();
+    // Als het wedstrijd-detailscherm open is, ook dat bijwerken
+    if (document.getElementById('matchDetail')?.classList.contains('on')) {
+      renderMatchDetail();
+    }
   }
 };
 

@@ -452,30 +452,40 @@ window.syncStateToCloud = function(state) {
         }, { merge: true });
 
       } else if (teamCode) {
-        // Coach slaat hele teamdata op
-        const teamDocRef = doc(db, "teams", teamCode);
-        await setDoc(teamDocRef, {
-          teamCode,
-          teamName: state.teamName || "Mijn Team",
-          updatedAt: new Date().toISOString(),
-          coachboardState: state
-        }, { merge: true });
-
-        if (currentUser) {
-          const userDocRef = doc(db, "users", currentUser.uid);
-          await setDoc(userDocRef, {
-            email: currentUser.email || "",
-            displayName: currentUser.displayName || "",
+        // Coach slaat hele teamdata op.
+        // Zet de vlag vóór het schrijven zodat de echo-onSnapshot wordt onderdrukt.
+        isApplyingCloudUpdate = true;
+        try {
+          const teamDocRef = doc(db, "teams", teamCode);
+          await setDoc(teamDocRef, {
+            teamCode,
+            teamName: state.teamName || "Mijn Team",
             updatedAt: new Date().toISOString(),
             coachboardState: state
           }, { merge: true });
+
+          if (currentUser) {
+            const userDocRef = doc(db, "users", currentUser.uid);
+            await setDoc(userDocRef, {
+              email: currentUser.email || "",
+              displayName: currentUser.displayName || "",
+              updatedAt: new Date().toISOString(),
+              coachboardState: state
+            }, { merge: true });
+          }
+        } finally {
+          // Korte pauze zodat de Firestore echo-snapshot wordt afgeleverd en onderdrukt
+          // voordat we de vlag terugzetten.
+          setTimeout(() => { isApplyingCloudUpdate = false; }, 800);
         }
       }
     } catch (err) {
+      isApplyingCloudUpdate = false;
       console.error("Fout bij syncStateToCloud:", err);
     }
   }, 100); // 100ms voor supersnelle realtime sync bij klik
 };
+
 
 window.syncAuthToCloud = function(authData) {
   const teamCode = (authData?.teamCode || "").toUpperCase().trim();
