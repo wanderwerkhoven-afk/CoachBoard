@@ -289,6 +289,8 @@ export async function fetchTeamDataByCode(code) {
 }
 window.fetchTeamDataByCode = fetchTeamDataByCode;
 
+let unsubscribePlayersListener = null;
+
 // ─── 5. Realtime Luisteren naar Team & Spelers ────────────────
 function listenToTeamUpdates(teamCode) {
   if (!teamCode || teamCode === currentTeamCode) return;
@@ -298,7 +300,12 @@ function listenToTeamUpdates(teamCode) {
     unsubscribeTeamListener();
     unsubscribeTeamListener = null;
   }
+  if (unsubscribePlayersListener) {
+    unsubscribePlayersListener();
+    unsubscribePlayersListener = null;
+  }
 
+  // 1. Luister naar coach-state updates (wedstrijden, opstellingen)
   const teamDocRef = doc(db, "teams", teamCode);
   unsubscribeTeamListener = onSnapshot(teamDocRef, (snapshot) => {
     if (isApplyingCloudUpdate) return;
@@ -313,6 +320,20 @@ function listenToTeamUpdates(teamCode) {
     }
     isApplyingCloudUpdate = false;
   }, err => console.warn("Team listener snapshot:", err));
+
+  // 2. Luister direct naar speler-beschikbaarheid wijzigingen (live realtime)
+  const playersColRef = collection(db, "teams", teamCode, "players");
+  unsubscribePlayersListener = onSnapshot(playersColRef, (snapshot) => {
+    if (isApplyingCloudUpdate) return;
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "removed") return;
+      const pData = change.doc.data();
+      const pid = change.doc.id;
+      if (typeof window.mergePlayerUpdate === "function") {
+        window.mergePlayerUpdate(pid, pData);
+      }
+    });
+  }, err => console.warn("Players listener snapshot:", err));
 }
 
 // ─── 6. Initialiseer Gebruiker na Login ───────────────────────
@@ -453,7 +474,7 @@ window.syncStateToCloud = function(state) {
     } catch (err) {
       console.error("Fout bij syncStateToCloud:", err);
     }
-  }, 400);
+  }, 100); // 100ms voor supersnelle realtime sync bij klik
 };
 
 window.syncAuthToCloud = function(authData) {
