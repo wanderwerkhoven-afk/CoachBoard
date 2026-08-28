@@ -3887,13 +3887,35 @@ body.dark-theme .settings-name-input{
   color:#f3f4f6!important;
   border-color:#343c49!important;
 }
-body.dark-theme button:not(.btn.primary):not(.auth-primary):not(.player-add-plus):not(.settings-name-save){
+body.dark-theme button:not(.btn.primary):not(.auth-primary):not(.player-add-plus):not(.settings-name-save):not(.home-match-tab.on):not(.matches-filter-btn.on):not(.tabs button.on){
   background:#171c24;
   color:#e5e7eb;
   border-color:#343c49;
 }
 body.dark-theme .tabs.icon-tabs button.on{
-  color:#ef4444!important;
+  background:var(--primary-color, #ef4444)!important;
+  border-color:var(--primary-color, #ef4444)!important;
+  color:#ffffff!important;
+}
+body.dark-theme .tabs.icon-tabs button.on svg{
+  color:#ffffff!important;
+  fill:currentColor!important;
+}
+body.dark-theme .tabs.icon-tabs button:not(.on){
+  color:#9ca3af!important;
+}
+body.dark-theme .tabs.icon-tabs button:not(.on) svg{
+  color:#9ca3af!important;
+}
+body.dark-theme .home-match-tab.on{
+  background:var(--primary-color, #ef4444)!important;
+  border-color:var(--primary-color, #ef4444)!important;
+  color:#ffffff!important;
+}
+body.dark-theme .matches-filter-btn.on{
+  background:var(--primary-color, #ef4444)!important;
+  border-color:var(--primary-color, #ef4444)!important;
+  color:#ffffff!important;
 }
 body.dark-theme .match-card-completed,
 body.dark-theme .match-card-prepared,
