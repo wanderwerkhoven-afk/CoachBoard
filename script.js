@@ -1,3 +1,39 @@
+
+function showToast(message,type='info',title='',duration=2800){
+
+  const stack=document.getElementById('toastStack'); if(!stack)return;
+  const safe=['success','info','warning','error'].includes(type)?type:'info';
+  const titles={success:'Gelukt',info:'Informatie',warning:'Let op',error:'Niet uitgevoerd'};
+  const icons={success:'✓',info:'i',warning:'!',error:'×'};
+  const toast=document.createElement('div');
+  toast.className=`coach-toast ${safe}`;
+  toast.setAttribute('role',safe==='error'?'alert':'status');
+  toast.innerHTML=`<div class="coach-toast-icon">${icons[safe]}</div>
+    <div class="coach-toast-copy"><div class="coach-toast-title"></div><div class="coach-toast-message"></div></div>
+    <button type="button" class="coach-toast-close" aria-label="Melding sluiten">×</button>`;
+  toast.querySelector('.coach-toast-title').textContent=title||titles[safe];
+  toast.querySelector('.coach-toast-message').textContent=String(message||'');
+  stack.appendChild(toast);
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  let timer;
+  const dismiss=()=>{
+    clearTimeout(timer);toast.classList.remove('show');toast.classList.add('hide');
+    setTimeout(()=>toast.remove(),220);
+  };
+  toast.querySelector('.coach-toast-close').addEventListener('click',dismiss);
+  timer=setTimeout(dismiss,Math.max(1400,duration));
+  while(stack.children.length>4)stack.firstElementChild?.remove();
+}
+
+window.showToast = showToast;
+
+window.alert=(message)=>{
+  const text=String(message||'');
+  const lower=text.toLowerCase();
+  const type=/(ongeldig|niet|geen|fout|kan pas|hoort niet|bestaat al|vul|kies)/.test(lower)?'warning':'info';
+  showToast(text,type);
+};
+
 const POS={
 1:'Doel',2:'Rechtsback',3:'Centrale verdediger',4:'Centrale verdediger',5:'Linker verdediger',
 6:'Centrale middenvelder',7:'Rechter middenvelder',8:'Linker middenvelder',
@@ -14,6 +50,7 @@ let state=loadState();
 function migrateCoachBoardData(){
   let changed=false;
   if(state.clubLogo===undefined){state.clubLogo='';changed=true;}
+  if(!state.teamCode){state.teamCode='';changed=true;}
 
   state.players.forEach(p=>{
     if(!p.preferredAvailability){
@@ -92,22 +129,18 @@ function defaultState(){return {"teamName": "FC Voorbeeld", "players": [{"id": "
 function loadState(){try{return JSON.parse(localStorage.getItem(KEY))||defaultState()}catch(e){return defaultState()}}
 function saveState(){
   localStorage.setItem(KEY,JSON.stringify(state));
-  renderAll();
-  if(typeof window.syncStateToCloud === 'function'){
+  if(typeof window.syncStateToCloud==='function'){
     window.syncStateToCloud(state);
   }
-}
-
-window.getCoachBoardState = function(){
-  return state;
-};
-
-window.setCoachBoardState = function(newState){
-  if(!newState) return;
-  state = newState;
-  localStorage.setItem(KEY, JSON.stringify(state));
-  migrateCoachBoardData();
   renderAll();
+}
+window.getCoachBoardState=function(){return state};
+window.setCoachBoardState=function(newState){
+  if(newState && typeof newState==='object'){
+    state=newState;
+    localStorage.setItem(KEY,JSON.stringify(state));
+    renderAll();
+  }
 };
 function uid(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
 function formatDateNL(value){
@@ -254,6 +287,8 @@ function generatePlayerPdf(playerId){
 <script>
   setTimeout(()=>window.print(),350);
 <\/script>
+
+
 </body>
 </html>`;
 
@@ -321,6 +356,7 @@ function renderHeader(){
 document.getElementById('saveTeam').addEventListener('click',()=>{
   state.teamName=document.getElementById('teamNameInput').value.trim()||'Mijn Team';
   saveState();
+  showToast(`Teamnaam opgeslagen als ${state.teamName}.`,'success','Team bijgewerkt');
   document.getElementById('teamEditPanel').classList.remove('on');
 });
 document.getElementById('editTeamNameBtn').addEventListener('click',()=>{
@@ -331,14 +367,26 @@ document.getElementById('cancelTeamEdit').addEventListener('click',()=>{
   document.getElementById('teamEditPanel').classList.remove('on');
 });
 
-document.getElementById('clubLogoButton')?.addEventListener('click',()=>document.getElementById('clubLogoInput')?.click());
-document.getElementById('changeClubLogo')?.addEventListener('click',()=>document.getElementById('clubLogoInput')?.click());
+document.getElementById('clubLogoButton')?.addEventListener('click',()=>{
+  if(isPlayerRole())return;
+  document.getElementById('clubLogoInput')?.click();
+});
+document.getElementById('changeClubLogo')?.addEventListener('click',()=>{
+  if(isPlayerRole())return;
+  document.getElementById('clubLogoInput')?.click();
+});
 document.getElementById('removeClubLogo')?.addEventListener('click',()=>{
+  if(isPlayerRole())return;
   state.clubLogo='';
   saveState();
   renderHeader();
+  showToast('Het clublogo is verwijderd.','success','Logo verwijderd');
 });
 document.getElementById('clubLogoInput')?.addEventListener('change',e=>{
+  if(isPlayerRole()){
+    e.target.value='';
+    return;
+  }
   const file=e.target.files?.[0];
   if(!file)return;
   const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
@@ -357,6 +405,7 @@ document.getElementById('clubLogoInput')?.addEventListener('change',e=>{
     state.clubLogo=String(reader.result||'');
     saveState();
     renderHeader();
+    showToast('Het clublogo is opgeslagen.','success','Logo bijgewerkt');
     e.target.value='';
   };
   reader.readAsDataURL(file);
@@ -867,6 +916,7 @@ function totalPlayerGoals(playerId){
 }
 
 function openFinishResultModal(matchId){
+  if(isPlayerRole())return;
   const m=state.matches.find(x=>x.id===matchId);
   if(!m)return;
 
@@ -1012,7 +1062,7 @@ function renderHome(){
         <div class="match-head-right">
           ${s.key==='final'?resultScoreButtonHtml(m,`data-home-finish="${m.id}"`):''}
           ${s.key==='result'?resultScoreButtonHtml(m,`data-home-finish="${m.id}"`):''}
-          ${(s.key==='final'||s.key==='result')?`<button class="match-refined-open match-stats-eye" data-home-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`:''}
+          ${(s.key==='final'||s.key==='result')?`<button class="match-refined-open match-stats-eye ${isPlayerRole()?'player-stats-histogram':''}" data-home-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${isPlayerRole()?matchStatsHistogramIcon():statsEyeIcon()}</button>`:''}
           ${s.key==='prepared'?`<button class="home-lineup-btn lineup-icon-only" data-home-lineup="${m.id}" title="Opstelling bekijken" aria-label="Opstelling bekijken"><svg viewBox="0 0 32 24" aria-hidden="true">
   <rect x="2.5" y="3" width="27" height="18" rx="1.8"
         fill="none" stroke="currentColor" stroke-width="1.15"/>
@@ -1024,7 +1074,7 @@ function renderHome(){
   <path d="M2.5 7.7h4.2v8.6H2.5M29.5 7.7h-4.2v8.6h4.2"
         fill="none" stroke="currentColor" stroke-width="1"/>
 </svg></button>`:''}
-          <button class="match-refined-open ${s.key==='prepared'?'status-prepared-pencil':s.key==='prepare'?'status-needs-prep-pencil':''}" data-home-open-sheet="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>
+          <button class="match-refined-open ${isPlayerRole()?'player-sheet-person':(s.key==='prepared'?'status-prepared-pencil':s.key==='prepare'?'status-needs-prep-pencil':'')}" data-home-open-sheet="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">${isPlayerRole()?playerSheetPersonIcon():'✎'}</button>
         </div>
       </div>
       <div class="match-compact-bottom">
@@ -1210,6 +1260,7 @@ function syncPlayerAbsenceToUnpreparedMatches(player,oldDates=[]){
 }
 
 function openPlayerEditor(id=null){
+  if(isPlayerRole())return;
   const p=id?state.players.find(x=>x.id===id):null;
   document.getElementById('editPlayerId').value=p?.id||'';
   document.getElementById('editPlayerName').value=p?.name||'';
@@ -1333,7 +1384,7 @@ function renderPlayers(){
   box.innerHTML=`
     <div class="players-table-head">
       <div>Speler</div>
-      <div>Niveau</div>
+      ${isPlayerRole()?'':`<div>Niveau</div>`}
       <div>Positie(s)</div>
       <div>Goals</div>
       <div>Beschikbaarheid</div>
@@ -1624,10 +1675,10 @@ function renderMatches(){
         </div>
         <div class="match-compact-actions">
           ${s.key==='final'
-            ?`${resultScoreButtonHtml(m,`data-open="${m.id}"`)}<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`
+            ?`${resultScoreButtonHtml(m,`data-open="${m.id}"`)}<button class="match-refined-open match-stats-eye ${isPlayerRole()?'player-stats-histogram':''}" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${isPlayerRole()?matchStatsHistogramIcon():statsEyeIcon()}</button>`
             :s.key==='result'
-              ?`${resultScoreButtonHtml(m,`data-open="${m.id}"`)}<button class="match-refined-open match-stats-eye" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${statsEyeIcon()}</button>`
-              :`<button class="match-refined-open ${s.key==='prepared'?'status-prepared-pencil':s.key==='prepare'?'status-needs-prep-pencil':''}" data-open="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">✎</button>`}
+              ?`${resultScoreButtonHtml(m,`data-open="${m.id}"`)}<button class="match-refined-open match-stats-eye ${isPlayerRole()?'player-stats-histogram':''}" data-open-match-stats="${m.id}" title="Wedstrijdstatistiek bekijken" aria-label="Wedstrijdstatistiek bekijken">${isPlayerRole()?matchStatsHistogramIcon():statsEyeIcon()}</button>`
+              :`<button class="match-refined-open ${isPlayerRole()?'player-sheet-person':(s.key==='prepared'?'status-prepared-pencil':s.key==='prepare'?'status-needs-prep-pencil':'')}" data-open="${m.id}" title="Wedstrijdblad openen" aria-label="Wedstrijdblad openen">${isPlayerRole()?playerSheetPersonIcon():'✎'}</button>`}
         </div>
       </div>
       <div class="match-compact-bottom">
@@ -1866,7 +1917,9 @@ function renderAvailability(){
     const futureAbsenceCount=(p.absenceDates||[]).filter(date=>date>=todayKey).length;
 
     const row=document.createElement('div');
-    row.className='row';
+    const ownPlayer=isPlayerRole() && p.id===currentPlayerId();
+    const readonlyPlayer=isPlayerRole() && p.id!==currentPlayerId();
+    row.className='row'+(ownPlayer?' availability-player-own':'')+(readonlyPlayer?' availability-player-readonly':'');
 
     const left=document.createElement('div');
     left.className='prepare-player-left';
@@ -1875,7 +1928,7 @@ function renderAvailability(){
         <b>${esc(p.name)}</b>
         ${futureAbsenceCount?`<span class="prepare-future-absence-count">(${futureAbsenceCount})</span>`:''}
       </div>
-      <div class="muted">N${p.level} · pos. ${(p.positions||[]).join(', ')||'—'}</div>`;
+      <div class="muted">${isPlayerRole()?'':`N${p.level} · `}pos. ${(p.positions||[]).join(', ')||'—'}</div>`;
 
     const dots=document.createElement('div');
     dots.className='status-dots';
@@ -1888,11 +1941,14 @@ function renderAvailability(){
       b.title=label;
       b.setAttribute('aria-label',label+(isSelected?' geselecteerd':''));
       b.textContent=isSelected?'✓':'';
-      b.addEventListener('click',(e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        m.availability[p.id]=key;
+      if(readonlyPlayer)b.disabled=true;
+      b.addEventListener('click',()=>{
+        if(isPlayerRole() && p.id!==currentPlayerId())return;
+        m.availability[p.id]=m.availability[p.id]===key?null:key;
         saveState();
+        const labels={fit:'Hele wedstrijd',limited:'Halve wedstrijd',noPlay:'Niet spelen',absent:'Afwezig'};
+        const current=m.availability[p.id];
+        showToast(current?`${p.name}: ${labels[current]}.`:`Beschikbaarheid van ${p.name} is leeggemaakt.`,'success','Beschikbaarheid opgeslagen',1800);
         renderMatchDetail();
       });
       dots.appendChild(b);
@@ -1915,7 +1971,7 @@ function renderAvailability(){
       showPlayerStats(p.id);
     });
 
-    actions.append(eye,dots);
+    if(!isPlayerRole() || p.id===currentPlayerId())actions.append(eye,dots); else actions.append(dots);
     row.append(left,actions);
     box.appendChild(row);
   });
@@ -1923,6 +1979,7 @@ function renderAvailability(){
   renderMissingAvailabilitySummary(m);
 }
 document.getElementById('clearAvailability')?.addEventListener('click',()=>{
+  if(!canManageTeam())return;
   const m=state.matches.find(x=>x.id===activeMatchId);
   if(!m)return;
   if(!m.availability)m.availability={};
@@ -2541,12 +2598,16 @@ function setCurrentLineup(half,val){
   if(half===1)m.lineup1=val;else m.lineup2=val;
 }
 
+function lineupXY(){
+  const formation=document.getElementById('formation')?.value||'4-3-3';
+  return formation==='4-4-2'?XY442:XY433;
+}
+
 function findNearestPosition(pitchEl,clientX,clientY){
   const rect=pitchEl.getBoundingClientRect();
   const x=((clientX-rect.left)/rect.width)*100;
   const y=((clientY-rect.top)/rect.height)*100;
-  const formation=document.getElementById('formation').value;
-  const xy=formation==='4-4-2'?XY442:XY433;
+  const xy=lineupXY();
   let best=null,bestD=Infinity;
   Object.entries(xy).forEach(([pos,[px,py]])=>{
     const d=(px-x)*(px-x)+(py-y)*(py-y);
@@ -2555,64 +2616,286 @@ function findNearestPosition(pitchEl,clientX,clientY){
   return best;
 }
 
-function movePlayerToPosition(half,pid,targetPos){
+function clearDropTarget(pitch){
+  pitch?.querySelectorAll('.slot.drop-target').forEach(s=>s.classList.remove('drop-target'));
+}
+
+function showDropTarget(pitch,pos){
+  clearDropTarget(pitch);
+  const slot=pitch?.querySelector(`.slot[data-pos="${pos}"]`);
+  slot?.classList.add('drop-target');
+}
+
+function pointerPercentInPitch(pitch,e){
+  const rect=pitch.getBoundingClientRect();
+  return {
+    x:Math.max(2,Math.min(98,((e.clientX-rect.left)/rect.width)*100)),
+    y:Math.max(2,Math.min(98,((e.clientY-rect.top)/rect.height)*100))
+  };
+}
+
+function persistLineupAfterAnimation(){
+  localStorage.setItem(KEY,JSON.stringify(state));
+  renderMatchDetail();
+}
+
+function animateMovePlayerToPosition(half,pid,targetPos,dragEl=null,fromBench=false){
   const m=state.matches.find(x=>x.id===activeMatchId);
+  if(!m)return;
+
   const lineup={...(half===1?m.lineup1:m.lineup2)};
   const sourceEntry=Object.entries(lineup).find(([pos,id])=>id===pid);
   const sourcePos=sourceEntry?+sourceEntry[0]:null;
   const displaced=lineup[targetPos];
+  const pitch=document.getElementById(half===1?'pitch1':'pitch2');
+  const xy=lineupXY();
 
-  if(sourcePos!==null) delete lineup[sourcePos];
+  if(!pitch || !xy[targetPos]){
+    return;
+  }
+
+  const movingEl=dragEl || pitch.querySelector(`.player[data-pid="${pid}"]`);
+  const displacedEl=displaced && displaced!==pid
+    ? pitch.querySelector(`.player[data-pid="${displaced}"]`)
+    : null;
+
+  clearDropTarget(pitch);
+  pitch.classList.remove('drag-active');
+
+  // Calculate the final lineup first.
+  if(sourcePos!==null)delete lineup[sourcePos];
   lineup[targetPos]=pid;
+
   if(displaced && displaced!==pid){
-    if(sourcePos!==null) lineup[sourcePos]=displaced;
-    else delete lineup[targetPos] && (lineup[targetPos]=pid);
+    if(sourcePos!==null){
+      // True position swap: displaced player takes the old position.
+      lineup[sourcePos]=displaced;
+    }else{
+      // Incoming bench player replaces the field player; old player goes to bench.
+      lineup[targetPos]=pid;
+    }
   }
 
-  if(displaced && displaced!==pid && sourcePos===null){
-    // Speler kwam van bank: speler op doelpositie gaat naar bank.
-    lineup[targetPos]=pid;
+  // Animate dragged player to its new position.
+  if(movingEl){
+    movingEl.classList.remove('dragging');
+    movingEl.classList.add('drop-settle');
+    movingEl.style.left=xy[targetPos][0]+'%';
+    movingEl.style.top=xy[targetPos][1]+'%';
   }
 
-  setCurrentLineup(half,lineup);
-  saveState();renderMatchDetail();
+  // Animate the player already occupying the target back to the source slot.
+  if(displacedEl && sourcePos!==null && xy[sourcePos]){
+    displacedEl.classList.add('swap-displaced');
+    requestAnimationFrame(()=>{
+      displacedEl.style.left=xy[sourcePos][0]+'%';
+      displacedEl.style.top=xy[sourcePos][1]+'%';
+      displacedEl.dataset.pos=String(sourcePos);
+    });
+  }else if(displacedEl && sourcePos===null){
+    // Bench-to-field replacement: field player visually exits before re-render.
+    displacedEl.classList.add('swap-displaced');
+    displacedEl.style.opacity='0';
+    displacedEl.style.transform='translate(-50%,-50%) scale(.86)';
+  }
+
+  const finish=()=>{
+    setCurrentLineup(half,lineup);
+    const moved=state.players.find(p=>p.id===pid);
+    const swapped=displaced?state.players.find(p=>p.id===displaced):null;
+    if(sourcePos!==null && swapped && displaced!==pid){
+      showToast(`${moved?.name||'Speler'} naar positie ${targetPos}; ${swapped.name} naar positie ${sourcePos}.`,'success','Posities gewisseld',1900);
+    }else{
+      showToast(`${moved?.name||'Speler'} is op positie ${targetPos} gezet.`,'success','Opstelling aangepast',1900);
+    }
+    persistLineupAfterAnimation();
+  };
+
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+    finish();
+  }else{
+    window.setTimeout(finish,420);
+  }
 }
 
 function attachDrag(el){
+  if(isPlayerRole())return;
+
+  let activePointerId=null;
+
+  const move=e=>{
+    if(!dragState || dragState.el!==el || e.pointerId!==activePointerId)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    if(!pitch)return;
+
+    const rect=pitch.getBoundingClientRect();
+    const inside=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;
+
+    if(inside){
+      const pct=pointerPercentInPitch(pitch,e);
+      // Follow the finger/mouse continuously.
+      el.style.left=pct.x+'%';
+      el.style.top=pct.y+'%';
+
+      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
+      dragState.targetPos=pos;
+      showDropTarget(pitch,pos);
+    }else{
+      clearDropTarget(pitch);
+      dragState.targetPos=null;
+    }
+  };
+
+  const end=e=>{
+    if(!dragState || dragState.el!==el || e.pointerId!==activePointerId)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    const targetPos=dragState.targetPos;
+    const half=dragState.half;
+    const pid=dragState.pid;
+
+    try{el.releasePointerCapture?.(e.pointerId)}catch(_){}
+    el.removeEventListener('pointermove',move);
+    el.removeEventListener('pointerup',end);
+    el.removeEventListener('pointercancel',cancel);
+
+    if(targetPos){
+      animateMovePlayerToPosition(half,pid,targetPos,el,false);
+    }else{
+      // Return smoothly to original slot if released outside the pitch.
+      const xy=lineupXY();
+      const sourcePos=+el.dataset.pos;
+      el.classList.remove('dragging');
+      if(xy[sourcePos]){
+        el.style.left=xy[sourcePos][0]+'%';
+        el.style.top=xy[sourcePos][1]+'%';
+      }
+      clearDropTarget(pitch);
+      pitch?.classList.remove('drag-active');
+    }
+
+    dragState=null;
+    activePointerId=null;
+  };
+
+  const cancel=e=>{
+    if(!dragState || dragState.el!==el)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    const xy=lineupXY();
+    const sourcePos=+el.dataset.pos;
+    el.classList.remove('dragging');
+    if(xy[sourcePos]){
+      el.style.left=xy[sourcePos][0]+'%';
+      el.style.top=xy[sourcePos][1]+'%';
+    }
+    clearDropTarget(pitch);
+    pitch?.classList.remove('drag-active');
+    dragState=null;
+    activePointerId=null;
+  };
+
   el.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined && e.button!==0)return;
     e.preventDefault();
+
+    activePointerId=e.pointerId;
     el.setPointerCapture?.(e.pointerId);
     el.classList.add('dragging');
-    dragState={pid:el.dataset.pid,half:getPitchHalfFromId(el.dataset.pitch),el};
-  });
-  el.addEventListener('pointerup',e=>{
-    if(!dragState)return;
-    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
-    const rect=pitch.getBoundingClientRect();
-    if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
-      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
-      movePlayerToPosition(dragState.half,dragState.pid,pos);
-    }
-    dragState.el?.classList.remove('dragging');dragState=null;
+
+    const half=getPitchHalfFromId(el.dataset.pitch);
+    const pitch=document.getElementById(half===1?'pitch1':'pitch2');
+    pitch?.classList.add('drag-active');
+
+    dragState={
+      pid:el.dataset.pid,
+      half,
+      el,
+      sourcePos:+el.dataset.pos,
+      targetPos:+el.dataset.pos
+    };
+
+    showDropTarget(pitch,+el.dataset.pos);
+
+    el.addEventListener('pointermove',move);
+    el.addEventListener('pointerup',end);
+    el.addEventListener('pointercancel',cancel);
   });
 }
 
 function attachBenchDrag(el){
+  if(isPlayerRole())return;
+
+  let pointerId=null;
+
+  const move=e=>{
+    if(!dragState || dragState.el!==el || e.pointerId!==pointerId)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    if(!pitch)return;
+    const rect=pitch.getBoundingClientRect();
+    const inside=e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;
+    if(inside){
+      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
+      dragState.targetPos=pos;
+      pitch.classList.add('drag-active');
+      showDropTarget(pitch,pos);
+    }else{
+      dragState.targetPos=null;
+      clearDropTarget(pitch);
+      pitch.classList.remove('drag-active');
+    }
+  };
+
+  const finish=e=>{
+    if(!dragState || dragState.el!==el || e.pointerId!==pointerId)return;
+    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
+    const targetPos=dragState.targetPos;
+    const half=dragState.half;
+    const pid=dragState.pid;
+
+    try{el.releasePointerCapture?.(e.pointerId)}catch(_){}
+    el.classList.remove('dragging');
+    clearDropTarget(pitch);
+    pitch?.classList.remove('drag-active');
+
+    el.removeEventListener('pointermove',move);
+    el.removeEventListener('pointerup',finish);
+    el.removeEventListener('pointercancel',cancel);
+
+    if(targetPos){
+      animateMovePlayerToPosition(half,pid,targetPos,null,true);
+    }
+
+    dragState=null;
+    pointerId=null;
+  };
+
+  const cancel=e=>{
+    const pitch=document.getElementById(dragState?.half===1?'pitch1':'pitch2');
+    el.classList.remove('dragging');
+    clearDropTarget(pitch);
+    pitch?.classList.remove('drag-active');
+    dragState=null;
+    pointerId=null;
+  };
+
   el.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined && e.button!==0)return;
     e.preventDefault();
+
+    pointerId=e.pointerId;
     el.setPointerCapture?.(e.pointerId);
     el.classList.add('dragging');
-    dragState={pid:el.dataset.pid,half:+el.dataset.half,el,fromBench:true};
-  });
-  el.addEventListener('pointerup',e=>{
-    if(!dragState)return;
-    const pitch=document.getElementById(dragState.half===1?'pitch1':'pitch2');
-    const rect=pitch.getBoundingClientRect();
-    if(e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
-      const pos=findNearestPosition(pitch,e.clientX,e.clientY);
-      movePlayerToPosition(dragState.half,dragState.pid,pos);
-    }
-    dragState.el?.classList.remove('dragging');dragState=null;
+
+    dragState={
+      pid:el.dataset.pid,
+      half:+el.dataset.half,
+      el,
+      fromBench:true,
+      targetPos:null
+    };
+
+    el.addEventListener('pointermove',move);
+    el.addEventListener('pointerup',finish);
+    el.addEventListener('pointercancel',cancel);
   });
 }
 
@@ -2627,8 +2910,18 @@ function restoreGenerated(half){
 
 
 function renderSelectionOverview(){
-  const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
   const box=document.getElementById('selectionOverview');if(!box)return;
+
+  // Dit blok bevat coachanalyse (niet-opgestelde spelers, historische
+  // speelminuten, niveaus en wisseladvies) en mag nooit in de spelerterminal staan.
+  if(isPlayerRole()){
+    box.innerHTML='';
+    box.style.display='none';
+    return;
+  }
+  box.style.display='';
+
+  const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
 
   const ids1=new Set(Object.values(m.lineup1||{}));
   const ids2=new Set(Object.values(m.lineup2||{}));
@@ -2690,6 +2983,7 @@ function renderSelectionOverview(){
 }
 
 function adjustEveryonePlays(){
+  if(isPlayerRole())return;
   const m=state.matches.find(x=>x.id===activeMatchId);if(!m)return;
   const playable=state.players.filter(p=>['fit','limited'].includes(m.availability?.[p.id]));
 
@@ -2806,16 +3100,17 @@ function renderBench(){
 
   const makeBench=(containerId,arr,half)=>{
     const c=document.getElementById(containerId);
-    c.innerHTML=`<b>Wisselspelers ${half===1?'1e':'2e'} helft (${arr.length})</b><div class="muted" style="margin:4px 0 8px">Sleep een speler naar het veld om te wisselen</div>`;
+    c.innerHTML=`<b>Wisselspelers ${half===1?'1e':'2e'} helft (${arr.length})</b>${isPlayerRole()?'':`<div class="muted" style="margin:4px 0 8px">Sleep een speler naar het veld om te wisselen</div>`}`;
     if(!arr.length){c.innerHTML+='<span class="muted">Geen wisselspelers</span>';return;}
     arr.forEach(p=>{
       const chip=document.createElement('span');
-      chip.className=`bench-chip level-${p.level}`;
-      chip.textContent=`${p.name} · N${p.level}`;
+      chip.className=isPlayerRole()?'bench-chip':`bench-chip level-${p.level}`;
+      // Niveaus zijn uitsluitend coachinformatie.
+      chip.textContent=isPlayerRole()?p.name:`${p.name} · N${p.level}`;
       chip.dataset.pid=p.id;
       chip.dataset.half=half;
       c.appendChild(chip);
-      attachBenchDrag(chip);
+      if(!isPlayerRole())attachBenchDrag(chip);
     });
   };
 
@@ -3241,11 +3536,15 @@ function renderStats(){
     return {p,minutes,present,registered,attendancePct};
   });
 
-  const maxMinutes=Math.max(70,...rows.map(r=>r.minutes));
+  const visibleRows=isPlayerRole()
+    ? rows.filter(r=>r.p.id===currentPlayerId())
+    : rows;
+
+  const maxMinutes=Math.max(70,...visibleRows.map(r=>r.minutes));
   const playerStatsList=document.getElementById('statsPlayerList');
   if(!playerStatsList)return;
 
-  if(!rows.length){
+  if(!visibleRows.length){
     playerStatsList.innerHTML='<div class="card empty">Nog geen spelers beschikbaar voor statistieken.</div>';
     return;
   }
@@ -3262,8 +3561,8 @@ function renderStats(){
       <div></div>
     </div>
     <div class="stats-player-list">
-      ${rows.map(r=>`
-        <div class="stats-player-card stats-player-card-bars-below">
+      ${visibleRows.map(r=>`
+        <div class="stats-player-card stats-player-card-bars-below ${isPlayerRole() && r.p.id!==currentPlayerId()?'player-other-stats':''}">
           <div class="stats-player-main stats-player-main-with-bars">
             <button type="button" class="stats-player-name" data-player-stats="${r.p.id}">${esc(r.p.name)}</button>
 
@@ -3281,9 +3580,9 @@ function renderStats(){
             </div>
           </div>
 
-          <div>
+          ${isPlayerRole()?'':`<div>
             <span class="stats-level-badge level-${r.p.level}">N${r.p.level}</span>
-          </div>
+          </div>`}
 
           <div class="stats-position-list">
             ${(r.p.positions||[]).map(pos=>`<span class="stats-position-pill">${pos}</span>`).join('')||'<span class="muted">—</span>'}
@@ -3322,10 +3621,35 @@ function matchScorerSummary(match){
 function resultScoreButtonHtml(m,attrs=''){
   const final=Boolean((m.result||'').trim());
   const label=final ? esc(matchResultDisplay(m)||m.result) : '.. - ..';
-  const title=final ? 'Uitslag bekijken' : 'Uitslag invullen';
+  const title=final ? 'Uitslag' : 'Uitslag invullen';
+
+  // Spelers mogen de score wel zien, maar nooit via de scorebutton
+  // een uitslag invoeren of wijzigen.
+  if(isPlayerRole()){
+    return `<span class="result-score-icon ${final?'is-final':'is-pending'} player-score-readonly" title="${final?'Uitslag':'Uitslag nog niet ingevuld'}" aria-label="${final?'Uitslag':'Uitslag nog niet ingevuld'}">
+      <span>${label}</span>
+    </span>`;
+  }
+
   return `<button class="result-score-icon ${final?'is-final':'is-pending'}" ${attrs} title="${title}" aria-label="${title}">
     <span>${label}</span>
   </button>`;
+}
+
+function playerSheetPersonIcon(){
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <circle cx="12" cy="7.2" r="3.05" fill="none" stroke="currentColor" stroke-width="1.7"/>
+    <path d="M5.6 20v-2.55c0-3.05 2.85-5.05 6.4-5.05s6.4 2 6.4 5.05V20"
+      fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function matchStatsHistogramIcon(){
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M4 20V11h3v9M10.5 20V6h3v14M17 20V3h3v17M3 20.5h18"
+      fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
 }
 
 function statsEyeIcon(){
@@ -4115,9 +4439,7 @@ document.getElementById('playerEditModal')?.addEventListener('click',e=>{
 });
 
 document.querySelectorAll('[data-pref-status]').forEach(btn=>{
-  btn.addEventListener('click',(e)=>{
-    e.preventDefault();
-    e.stopPropagation();
+  btn.addEventListener('click',()=>{
     setPreferredAvailabilityStatus(btn.dataset.prefStatus);
   });
 });
@@ -4183,3 +4505,499 @@ document.getElementById('downloadSeasonBook')?.addEventListener('click',e=>{
   e.preventDefault();
   downloadSeasonBookPdf();
 });
+
+
+const AUTH_KEY='coachboard_auth_v1';
+
+const ACCESS_MATRIX={
+  coach:[
+    'Home & teamoverzicht',
+    'Spelers beheren',
+    'Wedstrijden beheren',
+    'Beschikbaarheid iedereen',
+    'Opstellingen genereren',
+    'Uitslagen & goals',
+    'Alle statistieken',
+    'Seizoensboek'
+  ],
+  player:[
+    'Home & teamoverzicht',
+    'Wedstrijden bekijken',
+    'Eigen beschikbaarheid',
+    'Opstelling bekijken',
+    'Wedstrijdstatistiek',
+    'Eigen spelerstatistiek'
+  ]
+};
+
+function currentAuth(){
+  return authGet?.()||null;
+}
+function isCoachRole(){
+  return currentAuth()?.role==='coach';
+}
+function isPlayerRole(){
+  return currentAuth()?.role==='player';
+}
+function currentPlayerId(){
+  return currentAuth()?.playerId||null;
+}
+function canManageTeam(){
+  return isCoachRole();
+}
+function ensureTeamCode(){
+  if(!state.teamCode){
+    const base=(state.teamName||'TEAM').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,3)||'TEAM';
+    state.teamCode=`${base}${Math.floor(100+Math.random()*900)}`;
+    try{saveState();}catch(e){}
+  }
+  return state.teamCode;
+}
+function updatePlayerTeamCodeState(){
+  const codeInput=document.getElementById('playerTeamCode');
+  const block=document.getElementById('playerIdentityBlock');
+  const hint=document.getElementById('playerTeamCodeHint');
+  const joinBtn=document.getElementById('joinTeamBtn');
+  const select=document.getElementById('playerIdentitySelect');
+  if(!codeInput || !block || !joinBtn || !select)return;
+
+  const code=codeInput.value.trim().toUpperCase();
+  const valid=code.length>=4 && code===ensureTeamCode();
+
+  block.hidden=!valid;
+  if(hint)hint.hidden=valid;
+
+  if(valid){
+    populatePlayerIdentitySelect();
+    joinBtn.disabled=!select.value;
+  }else{
+    select.value='';
+    select.innerHTML='<option value="">Selecteer je naam</option>';
+    joinBtn.disabled=true;
+  }
+}
+
+function populatePlayerIdentitySelect(){
+  const sel=document.getElementById('playerIdentitySelect');
+  if(!sel)return;
+
+  const code=(document.getElementById('playerTeamCode')?.value||'').trim().toUpperCase();
+  if(code!==ensureTeamCode()){
+    sel.innerHTML='<option value="">Selecteer je naam</option>';
+    return;
+  }
+
+  const current=sel.value;
+  sel.innerHTML='<option value="">Selecteer je naam</option>'+
+    state.players
+      .slice()
+      .sort((a,b)=>a.name.localeCompare(b.name,'nl'))
+      .map(p=>`<option value="${p.id}">${esc(p.name)}</option>`)
+      .join('');
+
+  if(state.players.some(p=>p.id===current))sel.value=current;
+}
+
+function authGet(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch(e){return null}}
+function authSave(a){
+  localStorage.setItem(AUTH_KEY,JSON.stringify(a));
+  if(typeof window.syncAuthToCloud==='function'){
+    window.syncAuthToCloud(a);
+  }
+}
+window.getCoachBoardAuth=function(){return authGet()};
+window.setCoachBoardAuth=function(authData){
+  if(authData && typeof authData==='object'){
+    localStorage.setItem(AUTH_KEY,JSON.stringify(authData));
+    authApply();
+  }
+};
+
+function authCode(){return ensureTeamCode()}
+function authStep(id){['loginStep','roleStep','playerCodeStep'].forEach(x=>{const el=document.getElementById(x);if(el)el.hidden=x!==id})}
+function authApply(){
+  const a=authGet(), shell=document.getElementById('authShell');
+  if(!a?.loggedIn||!a?.role){
+    if(shell)shell.hidden=false;
+    document.body.classList.remove('role-player','role-coach');
+    authStep(a?.loggedIn?'roleStep':'loginStep');
+    return;
+  }
+  if(shell)shell.hidden=true;
+  document.body.classList.toggle('role-player',a.role==='player');
+  document.body.classList.toggle('role-coach',a.role==='coach');
+
+  // A player may view matches but can never add one.
+  ['homeQuickAddMatch','addMatch','matchAddCard'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.hidden=a.role==='player';
+  });
+
+  if(a.role==='player'){
+    populatePlayerIdentitySelect();
+    const player=state.players.find(p=>p.id===a.playerId);
+    if(!player){
+      if(shell)shell.hidden=false;
+      authStep('playerCodeStep');
+      updatePlayerTeamCodeState();
+      return;
+    }
+  }
+
+  try{renderAll();}catch(e){}
+}
+function settingsUpdate(){
+  const a=authGet(); if(!a)return;
+
+  document.getElementById('settingsEmail').textContent=a.email||'—';
+  document.getElementById('settingsRoleText').textContent=a.role==='coach'?'Coach':'Speler';
+  document.getElementById('coachTeamCodeSection').hidden=a.role!=='coach';
+  document.getElementById('playerTeamCodeSection').hidden=a.role!=='player';
+
+  const teamCode=ensureTeamCode();
+
+  const profileSection=document.getElementById('playerProfileSettingsSection');
+  if(profileSection)profileSection.hidden=a.role!=='player';
+
+  if(a.role==='coach'){
+    a.teamCode=teamCode;
+    authSave(a);
+    document.getElementById('coachTeamCode').textContent=teamCode;
+  }else{
+    document.getElementById('playerTeamCodeSettings').textContent=a.teamCode||teamCode;
+    const player=state.players.find(p=>p.id===a.playerId);
+    document.getElementById('settingsLinkedPlayer').textContent=
+      player?`Spelersprofiel: ${player.name}`:'Geen spelersprofiel gekoppeld';
+    const nameInput=document.getElementById('settingsPlayerName');
+    if(nameInput)nameInput.value=player?.name||'';
+  }
+
+  const accessSection=document.getElementById('settingsAccessSection');
+  if(accessSection)accessSection.hidden=a.role==='player';
+
+  const list=document.getElementById('settingsAccessList');
+  if(list){
+    list.innerHTML=(ACCESS_MATRIX[a.role]||[])
+      .map(x=>`<div class="settings-access-item">${x}</div>`)
+      .join('');
+  }
+}
+document.getElementById('authLoginBtn')?.addEventListener('click',()=>{const email=document.getElementById('authEmail').value.trim(),pw=document.getElementById('authPassword').value;if(!email||!pw){alert('Vul e-mailadres en wachtwoord in.');return}authSave({loggedIn:true,email,role:null,teamCode:null});authStep('roleStep')});
+document.getElementById('authBackToLogin')?.addEventListener('click',()=>{localStorage.removeItem(AUTH_KEY);authStep('loginStep')});
+document.querySelectorAll('[data-role-choice]').forEach(b=>b.addEventListener('click',()=>{
+  const a=authGet()||{};
+  a.role=b.dataset.roleChoice;
+  a.loggedIn=true;
+  if(a.role==='coach'){
+    a.teamCode=ensureTeamCode();
+    a.playerId=null;
+    authSave(a);
+    showToast(`Je bent ingelogd als coach. Teamcode: ${a.teamCode}`,'success','Coachprofiel actief');
+    authApply();
+  }else{
+    a.teamCode=null;
+    a.playerId=null;
+    authSave(a);
+
+    const codeInput=document.getElementById('playerTeamCode');
+    const playerSelect=document.getElementById('playerIdentitySelect');
+    if(codeInput)codeInput.value='';
+    if(playerSelect){
+      playerSelect.value='';
+      playerSelect.innerHTML='<option value="">Selecteer je naam</option>';
+    }
+
+    authStep('playerCodeStep');
+    updatePlayerTeamCodeState();
+    setTimeout(()=>codeInput?.focus(),30);
+  }
+}));
+document.getElementById('playerCodeBack')?.addEventListener('click',()=>{
+  const codeInput=document.getElementById('playerTeamCode');
+  const select=document.getElementById('playerIdentitySelect');
+  if(codeInput)codeInput.value='';
+  if(select){
+    select.value='';
+    select.innerHTML='<option value="">Selecteer je naam</option>';
+  }
+  updatePlayerTeamCodeState();
+  authStep('roleStep');
+});
+document.getElementById('joinTeamBtn')?.addEventListener('click',()=>{
+  const code=document.getElementById('playerTeamCode').value.trim().toUpperCase();
+  const playerId=document.getElementById('playerIdentitySelect').value;
+
+  if(code!==ensureTeamCode()){
+    alert('Deze teamcode hoort niet bij een geldig team.');
+    updatePlayerTeamCodeState();
+    return;
+  }
+  if(!playerId){
+    alert('Selecteer je eigen spelersprofiel.');
+    return;
+  }
+
+  const playerExists=state.players.some(p=>p.id===playerId);
+  if(!playerExists){
+    alert('Dit spelersprofiel hoort niet bij dit team.');
+    updatePlayerTeamCodeState();
+    return;
+  }
+
+  const a=authGet()||{};
+  a.loggedIn=true;
+  a.role='player';
+  a.teamCode=code;
+  a.playerId=playerId;
+  authSave(a);
+  const linkedPlayer=state.players.find(p=>p.id===playerId);
+  showToast(`Gekoppeld aan ${linkedPlayer?.name||'je spelersprofiel'}.`,'success','Team gekoppeld');
+  authApply();
+});
+document.getElementById('openSettingsBtn')?.addEventListener('click',(e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+  settingsUpdate();
+  const modal=document.getElementById('settingsModal');
+  if(!modal){
+    alert('Instellingen konden niet worden geopend.');
+    return;
+  }
+  modal.classList.add('show');
+  modal.scrollTop=0;
+  const settingsCard=modal.querySelector('.settings-card');
+  if(settingsCard)settingsCard.scrollTop=0;
+});
+document.getElementById('closeSettingsBtn')?.addEventListener('click',()=>{
+  document.getElementById('settingsModal')?.classList.remove('show');
+});
+document.getElementById('settingsModal')?.addEventListener('click',(e)=>{
+  if(e.target===e.currentTarget)e.currentTarget.classList.remove('show');
+});
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape')document.getElementById('settingsModal')?.classList.remove('show');
+});
+document.getElementById('copyTeamCodeBtn')?.addEventListener('click',async()=>{const code=ensureTeamCode();try{await navigator.clipboard.writeText(code)}catch(e){alert('Teamcode: '+code)}});
+document.getElementById('logoutBtn')?.addEventListener('click',async()=>{
+  if(typeof window.handleFirebaseLogout==='function'){try{await window.handleFirebaseLogout()}catch(e){}}
+  localStorage.removeItem(AUTH_KEY);
+  document.getElementById('settingsModal')?.classList.remove('show');
+  const shell=document.getElementById('authShell');
+  if(shell)shell.hidden=false;
+  document.body.classList.remove('role-coach','role-player');
+  authStep('loginStep');
+  showToast('Je bent uitgelogd.','info','Uitgelogd');
+});
+authApply();
+
+/* Hard UI guard: speler kan coach-acties niet via verborgen knoppen uitvoeren. */
+document.addEventListener('click',(e)=>{
+  if(!isPlayerRole())return;
+  const coachOnly=e.target.closest(
+    '#addMatch,#homeQuickAddMatch,#generateLineups,#restore1,#restore2,'+
+    '#clearAvailability,[data-sheet-edit-result],[data-sheet-delete],'+
+    '#restorePreparedBtn,#togglePlayerAdd,[data-edit],.match-delete-icon'
+  );
+  if(coachOnly){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+},true);
+
+
+function scrubLevelInfoForPlayer(){
+  if(!isPlayerRole())return;
+  document.querySelectorAll('.player-level-badge,.stats-level-badge,#playerLevelFilter,.level-filter-icon').forEach(el=>el.remove());
+  document.querySelectorAll('[data-level-private]').forEach(el=>el.remove());
+}
+document.addEventListener('click',()=>setTimeout(scrubLevelInfoForPlayer,0),true);
+setTimeout(scrubLevelInfoForPlayer,0);
+
+
+/* Speler kan geen wedstrijd afronden of uitslag muteren, ook niet via verborgen controls. */
+document.addEventListener('click',(e)=>{
+  if(!isPlayerRole())return;
+  const blocked=e.target.closest(
+    '[data-home-finish],[data-sheet-edit-result],#finishMatch,#openFinishPanel,'+
+    '[data-finish-special],.finish-scorer-add,.finish-scorer-remove'
+  );
+  if(blocked){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return false;
+  }
+},true);
+
+
+document.getElementById('savePlayerNameBtn')?.addEventListener('click',()=>{
+  const a=authGet();
+  if(!a || a.role!=='player' || !a.playerId)return;
+
+  const input=document.getElementById('settingsPlayerName');
+  const newName=(input?.value||'').trim().replace(/\s+/g,' ');
+  if(newName.length<2){
+    alert('Vul een geldige naam in.');
+    return;
+  }
+
+  const duplicate=state.players.some(p =>
+    p.id!==a.playerId &&
+    (p.name||'').trim().toLocaleLowerCase('nl-NL')===newName.toLocaleLowerCase('nl-NL')
+  );
+  if(duplicate){
+    alert('Er bestaat al een speler met deze naam.');
+    return;
+  }
+
+  const player=state.players.find(p=>p.id===a.playerId);
+  if(!player)return;
+
+  player.name=newName;
+  saveState();
+  showToast(`Je naam is gewijzigd naar ${newName}.`,'success','Profiel bijgewerkt');
+
+  const linked=document.getElementById('settingsLinkedPlayer');
+  if(linked)linked.textContent=`Spelersprofiel: ${newName}`;
+
+  const saved=document.getElementById('settingsNameSaved');
+  if(saved){
+    saved.hidden=false;
+    clearTimeout(window.__coachboardNameSavedTimer);
+    window.__coachboardNameSavedTimer=setTimeout(()=>saved.hidden=true,1800);
+  }
+
+  // Refresh all visible references to the player name.
+  try{renderAll();}catch(e){}
+});
+
+
+/* =========================
+   Theme preference
+   ========================= */
+const THEME_KEY='coachboard_theme_v1';
+
+function applyCoachBoardTheme(theme){
+  const dark=theme==='dark';
+  document.body.classList.toggle('dark-theme',dark);
+  const sw=document.getElementById('themeSwitch');
+  if(sw)sw.checked=dark;
+}
+
+function loadCoachBoardTheme(){
+  const saved=localStorage.getItem(THEME_KEY)||'light';
+  applyCoachBoardTheme(saved);
+}
+
+document.getElementById('themeSwitch')?.addEventListener('change',e=>{
+  const theme=e.target.checked?'dark':'light';
+  localStorage.setItem(THEME_KEY,theme);
+  applyCoachBoardTheme(theme);
+  showToast(theme==='dark'?'Donkere weergave ingeschakeld.':'Lichte weergave ingeschakeld.','success','Weergave aangepast');
+});
+
+loadCoachBoardTheme();
+
+
+document.getElementById('playerTeamCode')?.addEventListener('input',()=>{
+  const input=document.getElementById('playerTeamCode');
+  if(input)input.value=input.value.toUpperCase().replace(/\s+/g,'');
+  updatePlayerTeamCodeState();
+});
+
+document.getElementById('playerIdentitySelect')?.addEventListener('change',()=>{
+  const joinBtn=document.getElementById('joinTeamBtn');
+  const code=(document.getElementById('playerTeamCode')?.value||'').trim().toUpperCase();
+  if(joinBtn){
+    joinBtn.disabled=!(code===ensureTeamCode() && document.getElementById('playerIdentitySelect')?.value);
+  }
+});
+
+
+/* Glossy sticky navigation only after the page starts scrolling. */
+(function initStickyGlassNav(){
+  const nav=document.querySelector('nav.tabs.icon-tabs');
+  if(!nav)return;
+
+  let ticking=false;
+  const update=()=>{
+    nav.classList.toggle('is-scrolled', window.scrollY > 14);
+    ticking=false;
+  };
+
+  const onScroll=()=>{
+    if(ticking)return;
+    ticking=true;
+    requestAnimationFrame(update);
+  };
+
+  update();
+  window.addEventListener('scroll',onScroll,{passive:true});
+})();
+
+
+/* Keep native range slider fill in CoachBoard red. */
+(function initCoachBoardRangeTheme(){
+  const paint=(el)=>{
+    if(!el || el.type!=='range')return;
+    const min=Number(el.min||0);
+    const max=Number(el.max||100);
+    const val=Number(el.value||0);
+    const pct=max===min?0:Math.max(0,Math.min(100,((val-min)/(max-min))*100));
+    const dark=document.body.classList.contains('dark-theme');
+    const rest=dark?'#3a2b2d':'#ead7d7';
+    el.style.background=`linear-gradient(90deg,var(--red) 0%,var(--red) ${pct}%,${rest} ${pct}%,${rest} 100%)`;
+  };
+
+  const bind=(el)=>{
+    if(el.dataset.coachRangeBound==='1')return;
+    el.dataset.coachRangeBound='1';
+    paint(el);
+    el.addEventListener('input',()=>paint(el));
+    el.addEventListener('change',()=>paint(el));
+  };
+
+  document.querySelectorAll('input[type="range"]').forEach(bind);
+
+  const observer=new MutationObserver(()=>{
+    document.querySelectorAll('input[type="range"]').forEach(bind);
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+
+  const themeObserver=new MutationObserver(()=>{
+    document.querySelectorAll('input[type="range"]').forEach(paint);
+  });
+  themeObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
+})();
+
+
+window.onFirebaseAuthSuccess = function(user) {
+  const currentAuth = typeof authGet === 'function' ? authGet() : null;
+  if (!currentAuth || !currentAuth.loggedIn || !currentAuth.role) {
+    if (typeof authSave === 'function') {
+      authSave({ loggedIn: true, email: user.email || user.displayName || 'Google Gebruiker', role: null, teamCode: null });
+    }
+    if (typeof authStep === 'function') {
+      authStep('roleStep');
+    }
+  } else {
+    if (typeof authApply === 'function') {
+      authApply();
+    }
+  }
+};
+
+window.onFirebaseAuthNeedsRole = function(user) {
+  const currentAuth = typeof authGet === 'function' ? authGet() : null;
+  if (!currentAuth || !currentAuth.role) {
+    if (typeof authSave === 'function') {
+      authSave({ loggedIn: true, email: user.email || user.displayName || 'Google Gebruiker', role: null, teamCode: null });
+    }
+    if (typeof authStep === 'function') {
+      authStep('roleStep');
+    }
+  } else {
+    if (typeof authApply === 'function') {
+      authApply();
+    }
+  }
+};

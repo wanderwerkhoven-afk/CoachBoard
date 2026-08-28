@@ -9,9 +9,88 @@
 <meta name="theme-color" content="#c62828">
 <title>CoachBoard</title>
 <link rel="stylesheet" href="style.css">
-
 </head>
-<body>
+<body><div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+<div class="coachboard-lava-layer" aria-hidden="true">
+  <span class="coachboard-lava-blob blob-a"></span>
+  <span class="coachboard-lava-blob blob-b"></span>
+  <span class="coachboard-lava-blob blob-c"></span>
+</div>
+
+<div id="authShell" class="auth-shell">
+  <div class="auth-brand">
+    <div class="auth-logo-mark">⚽</div>
+    <div><div class="auth-brand-name">CoachBoard</div><div class="auth-brand-sub">Teambeheer voor coaches en spelers</div></div>
+  </div>
+
+  <div class="auth-card" id="loginStep">
+    <div class="auth-step-kicker">Welkom</div>
+    <h1>Inloggen</h1>
+    <p class="auth-copy">Log in om je team, wedstrijden en beschikbaarheid te openen.</p>
+
+    <button type="button" class="auth-google-btn" id="googleLoginBtn">
+      <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+      </svg>
+      <span>Inloggen met Google</span>
+    </button>
+
+    <div class="auth-divider"><span>of met e-mail</span></div>
+    <label class="auth-label">E-mailadres</label>
+    <input class="auth-input" id="authEmail" type="email" placeholder="naam@voorbeeld.nl">
+    <label class="auth-label">Wachtwoord</label>
+    <input class="auth-input" id="authPassword" type="password" placeholder="••••••••">
+    <button class="auth-primary" id="authLoginBtn">Inloggen</button>
+    <div class="auth-footnote">Gegevens worden veilig gesynchroniseerd via Firebase Cloud.</div>
+  </div>
+
+  <div class="auth-card" id="roleStep" hidden>
+    <div class="auth-step-kicker">Stap 2</div>
+    <h1>Kies je rol</h1>
+    <p class="auth-copy">Dit bepaalt welke functies je in CoachBoard ziet.</p>
+    <div class="role-grid">
+      <button class="role-choice" data-role-choice="coach">
+        <span class="role-icon">👤</span><strong>Coach</strong><small>Beheer spelers, wedstrijden en opstellingen.</small>
+      </button>
+      <button class="role-choice" data-role-choice="player">
+        <span class="role-icon">👤</span><strong>Speler</strong><small>Bekijk je team en geef beschikbaarheid door.</small>
+      </button>
+    </div>
+    <button class="auth-secondary" id="authBackToLogin">← Terug</button>
+  </div>
+
+  <div class="auth-card" id="playerCodeStep" hidden>
+    <div class="auth-step-kicker">Speler koppelen</div>
+    <h1>Koppel aan je team</h1>
+    <p class="auth-copy">Voer de teamcode van je coach in en kies daarna je eigen spelersprofiel.</p>
+
+    <label class="auth-label" for="playerTeamCode">Teamcode</label>
+    <input class="auth-input auth-code-input" id="playerTeamCode" maxlength="8" placeholder="KGB45" autocomplete="off">
+
+    <div id="playerIdentityBlock" hidden>
+      <div class="auth-teamcode-valid">
+        <span class="auth-teamcode-check">✓</span>
+        <span>Team gevonden</span>
+      </div>
+
+      <label class="auth-label" for="playerIdentitySelect">Wie ben jij?</label>
+      <select class="auth-input" id="playerIdentitySelect">
+        <option value="">Selecteer je naam</option>
+      </select>
+    </div>
+
+    <div id="playerTeamCodeHint" class="auth-teamcode-hint">
+      Vul eerst de juiste teamcode in. Daarna verschijnen alleen de spelers van dat team.
+    </div>
+
+    <button class="auth-primary" id="joinTeamBtn" disabled>Team koppelen</button>
+    <button class="auth-secondary" id="playerCodeBack">← Andere rol kiezen</button>
+  </div>
+</div>
+
 <div class="app">
 <header>
   <div>
@@ -38,55 +117,13 @@
       </div>
     </div>
   </div>
-    <div class="header-right">
-    <div class="brand-row">
-      <div class="header-coachboard">CoachBoard</div>
-      <div class="settings-wrap">
-        <button type="button" class="settings-gear-btn" id="settingsGearBtn" aria-label="Instellingen en Account" title="Instellingen & Account">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          <span id="cloudStatusDot" class="cloud-status-dot offline" title="Status: Offline"></span>
-        </button>
-        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
-          <div class="settings-dropdown-head">
-            <div class="settings-dropdown-title">Account & Cloud</div>
-            <button type="button" class="settings-dropdown-close" id="closeSettingsDropdown" aria-label="Sluiten">×</button>
-          </div>
-
-          <!-- Niet ingelogd weergave -->
-          <div id="authLoggedOutView" class="auth-dropdown-section">
-            <div class="auth-status-badge offline">
-              <span class="status-indicator-dot"></span>
-              <span>Lokaal opgeslagen (Niet ingelogd)</span>
-            </div>
-            <p class="auth-dropdown-desc">Log in met je Google-account om al je CoachBoard data automatisch in de cloud (Firestore) op te slaan en te synchroniseren.</p>
-            <button type="button" class="btn-google-action" id="googleLoginBtn">
-              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-              <span>Inloggen met Google</span>
-            </button>
-          </div>
-
-          <!-- Ingelogd weergave -->
-          <div id="authLoggedInView" class="auth-dropdown-section" style="display:none;">
-            <div class="user-card-header">
-              <img class="user-avatar-lg" id="userAvatar" alt="User avatar" src="" style="display:none;">
-              <div class="user-info-text">
-                <div class="user-display-name" id="userName">Gebruiker</div>
-                <div class="user-email-text" id="userEmail"></div>
-              </div>
-            </div>
-            <div class="auth-status-badge online">
-              <span class="status-indicator-dot online"></span>
-              <span>Firestore Cloud Sync Actief</span>
-            </div>
-            <div class="auth-dropdown-actions">
-              <button type="button" class="btn ghost btn-sync-now" id="manualSyncBtn">☁️ Nu synchroniseren</button>
-              <button type="button" class="btn danger-soft btn-logout-action" id="logoutBtn">Uitloggen</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="header-actions-right"><button class="header-settings-btn" id="openSettingsBtn" title="Instellingen" aria-label="Instellingen">
+<svg class="settings-cog-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d="M9.7 3.4h4.6l.55 2.05c.45.18.87.42 1.26.72l2.03-.58 2.3 3.98-1.5 1.48c.04.31.06.63.06.95s-.02.64-.06.95l1.5 1.48-2.3 3.98-2.03-.58c-.39.30-.81.54-1.26.72l-.55 2.05H9.7l-.55-2.05a7.1 7.1 0 0 1-1.26-.72l-2.03.58-2.3-3.98 1.5-1.48A7.5 7.5 0 0 1 5 12c0-.32.02-.64.06-.95l-1.5-1.48 2.3-3.98 2.03.58c.39-.30.81-.54 1.26-.72L9.7 3.4Z"
+        fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"/>
+  <circle cx="12" cy="12" r="3.05" fill="none" stroke="currentColor" stroke-width="1.65"/>
+</svg>
+</button><div class="header-coachboard">CoachBoard</div></div>
 </header>
 
 <nav class="tabs icon-tabs">
@@ -280,7 +317,7 @@
     <div id="coverageAdvice"></div>
   </div>
 
-  <div class="card">
+  <div class="card coach-lineup-config">
     <label>Formatie</label>
     <select id="formation"><option>4-3-3</option><option>4-4-2</option></select>
     <label>Minimale balansbezetting</label>
@@ -296,6 +333,8 @@
   </div>
 
   <div id="lineupMsg"></div>
+
+  <div class="lineup-overview-heading">Wedstrijdoverzicht</div>
 
   <div class="lineup-half-card">
     <div class="lineup-half-head">
@@ -324,8 +363,7 @@ WhatsApp
   </div>
   <div id="bench2" class="card lineup-bench-panel"></div>
 
-  <div class="card accent">
-    <div class="section-title" style="margin-top:0">Wedstrijdoverzicht</div>
+  <div class="card accent coach-selection-card">
     <div id="selectionOverview"></div>
   </div>
 
@@ -514,7 +552,81 @@ WhatsApp
 
 <div class="actions"><button class="btn ghost" id="cancelPlayerEdit">Annuleren</button><button class="btn primary" id="savePlayerEdit">Opslaan</button></div>
 </div></div>
-<script src="app.js"></script>
+<div class="settings-modal" id="settingsModal">
+  <div class="settings-card">
+    <div class="settings-head"><div><div class="settings-kicker">CoachBoard</div><div class="settings-title">Instellingen</div></div><button class="settings-close" id="closeSettingsBtn">×</button></div>
+        <div class="settings-section">
+      <div class="settings-label">Account & Cloud</div>
+      <div class="settings-account-row">
+        <img id="userAvatar" class="settings-avatar" alt="Avatar" style="display:none;">
+        <div>
+          <div id="settingsEmail" class="settings-account-email">—</div>
+          <div class="settings-account-meta">
+            <span id="settingsRoleText" class="settings-role-badge">—</span>
+            <span id="cloudStatusBadge" class="cloud-status-badge online">
+              <span class="status-indicator-dot"></span>
+              <span id="cloudStatusText">Firebase Cloud</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="settings-sync-btn" id="manualSyncBtn">Nu synchroniseren ☁️</button>
+    </div>
+    <div class="settings-section" id="themeSettingsSection">
+      <div class="settings-theme-row">
+        <div>
+          <div class="settings-label">Weergave</div>
+          <div class="settings-help">Wissel tussen lichte en donkere weergave.</div>
+        </div>
+        <label class="theme-switch-pill" for="themeSwitch" title="Wissel thema">
+          <input type="checkbox" id="themeSwitch" aria-label="Donker thema inschakelen">
+          <span class="theme-switch-track">
+            <span class="theme-switch-icon theme-switch-sun" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M18.5 5.5 17 7M7 17l-1.5 1.5"
+                  fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="theme-switch-knob"></span>
+            <span class="theme-switch-icon theme-switch-moon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M18.8 15.3A7.4 7.4 0 0 1 8.7 5.2 8 8 0 1 0 18.8 15.3Z"
+                  fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-section" id="coachTeamCodeSection" hidden><div class="settings-label">Teamcode</div><div class="settings-help">Deel deze code met spelers.</div><div class="team-code-card"><code id="coachTeamCode">—</code><button class="team-code-copy" id="copyTeamCodeBtn">Kopieer</button></div></div>
+    <div class="settings-section" id="playerTeamCodeSection" hidden>
+      <div class="settings-label">Gekoppeld team</div>
+      <div class="settings-help">Je spelersaccount is gekoppeld aan dit team.</div>
+      <div class="team-code-card"><code id="playerTeamCodeSettings">—</code></div>
+      <div class="settings-linked-player" id="settingsLinkedPlayer">—</div>
+    </div>
+    <div class="settings-section" id="playerProfileSettingsSection" hidden>
+      <div class="settings-label">Mijn profiel</div>
+      <div class="settings-help">Wijzig hier de naam die bij jouw spelersprofiel wordt weergegeven.</div>
+      <label class="settings-field-label" for="settingsPlayerName">Naam</label>
+      <div class="settings-name-edit-row">
+        <input id="settingsPlayerName" class="settings-name-input" type="text" maxlength="40" autocomplete="name">
+        <button type="button" id="savePlayerNameBtn" class="settings-name-save">Opslaan</button>
+      </div>
+      <div id="settingsNameSaved" class="settings-name-saved" hidden>Naam opgeslagen</div>
+    </div>
+
+    <div class="settings-section" id="settingsAccessSection">
+      <div class="settings-label">Toegang in CoachBoard</div>
+      <div class="settings-help">De zichtbare onderdelen worden automatisch bepaald door je rol.</div>
+      <div id="settingsAccessList" class="settings-access-list"></div>
+    </div>
+
+    <button class="settings-logout" id="logoutBtn">Uitloggen</button>
+  </div>
+</div>
+<script src="script.js"></script>
 <script type="module" src="auth.js"></script>
 </body>
 </html>

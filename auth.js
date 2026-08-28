@@ -38,8 +38,12 @@ let unsubscribeFirestore = null;
 let isApplyingCloudUpdate = false;
 let cloudSyncTimeout = null;
 
-// ─── Toast Notificaties ──────────────────────────────────────
-export function showToast(message, type = "info", duration = 3500) {
+// ─── Toast Helper ─────────────────────────────────────────────
+export function notifyToast(message, type = "info", duration = 3500) {
+  if (typeof window.showToast === "function") {
+    window.showToast(message, type, '', duration);
+    return;
+  }
   let toastContainer = document.getElementById("toastContainer");
   if (!toastContainer) {
     toastContainer = document.createElement("div");
@@ -60,26 +64,21 @@ export function showToast(message, type = "info", duration = 3500) {
     setTimeout(() => toast.remove(), 300);
   }, duration);
 }
-window.showToast = showToast;
 
-// ─── Update UI (Dropdown & Status Dot) ───────────────────────
+// ─── Update UI (Settings & Badges) ───────────────────────────
 function updateAuthUI(user) {
-  const loggedOutView = document.getElementById("authLoggedOutView");
-  const loggedInView = document.getElementById("authLoggedInView");
-  const cloudStatusDot = document.getElementById("cloudStatusDot");
   const userAvatar = document.getElementById("userAvatar");
-  const userName = document.getElementById("userName");
-  const userEmail = document.getElementById("userEmail");
+  const settingsEmail = document.getElementById("settingsEmail");
+  const cloudBadge = document.getElementById("cloudStatusBadge");
+  const cloudText = document.getElementById("cloudStatusText");
 
   if (user) {
-    if (loggedOutView) loggedOutView.style.display = "none";
-    if (loggedInView) loggedInView.style.display = "flex";
-    if (cloudStatusDot) {
-      cloudStatusDot.className = "cloud-status-dot online";
-      cloudStatusDot.title = "Status: Online (Firestore Cloud Sync)";
+    if (cloudBadge) {
+      cloudBadge.className = "cloud-status-badge online";
+      cloudBadge.title = "Status: Online (Firestore Cloud Sync)";
     }
-    if (userName) userName.textContent = user.displayName || user.email.split("@")[0];
-    if (userEmail) userEmail.textContent = user.email || "";
+    if (cloudText) cloudText.textContent = "Online (Cloud Sync)";
+    if (settingsEmail) settingsEmail.textContent = user.email || user.displayName || "Ingelogd";
     if (userAvatar) {
       if (user.photoURL) {
         userAvatar.src = user.photoURL;
@@ -89,30 +88,13 @@ function updateAuthUI(user) {
       }
     }
   } else {
-    if (loggedOutView) loggedOutView.style.display = "flex";
-    if (loggedInView) loggedInView.style.display = "none";
-    if (cloudStatusDot) {
-      cloudStatusDot.className = "cloud-status-dot offline";
-      cloudStatusDot.title = "Status: Lokaal opgeslagen";
+    if (cloudBadge) {
+      cloudBadge.className = "cloud-status-badge offline";
+      cloudBadge.title = "Status: Lokaal opgeslagen";
     }
+    if (cloudText) cloudText.textContent = "Offline / Lokaal";
+    if (userAvatar) userAvatar.style.display = "none";
   }
-}
-
-// ─── Dropdown Toggle & Sluiten ───────────────────────────────
-function toggleSettingsDropdown() {
-  const dropdown = document.getElementById("settingsDropdown");
-  const gearBtn = document.getElementById("settingsGearBtn");
-  if (!dropdown) return;
-  const isVisible = dropdown.style.display !== "none";
-  dropdown.style.display = isVisible ? "none" : "block";
-  gearBtn?.classList.toggle("active", !isVisible);
-}
-
-function closeSettingsDropdown() {
-  const dropdown = document.getElementById("settingsDropdown");
-  const gearBtn = document.getElementById("settingsGearBtn");
-  if (dropdown) dropdown.style.display = "none";
-  gearBtn?.classList.remove("active");
 }
 
 // ─── Initialiseer Gebruikersdata & Firestore Sync ────────────
@@ -124,30 +106,68 @@ async function initUserFirestoreData(user) {
     const userDocRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userDocRef);
 
-    if (docSnap.exists() && docSnap.data()?.coachboardState) {
-      // 1. Data bestaat al in Firestore -> inladen in CoachBoard
-      const cloudState = docSnap.data().coachboardState;
-      isApplyingCloudUpdate = true;
-      if (typeof window.setCoachBoardState === "function") {
-        window.setCoachBoardState(cloudState);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+
+      // 1. Data bestaat al in Firestore -> inladen in CoachBoard state
+      if (data?.coachboardState) {
+        const cloudState = data.coachboardState;
+        isApplyingCloudUpdate = true;
+        if (typeof window.setCoachBoardState === "function") {
+          window.setCoachBoardState(cloudState);
+        }
+        isApplyingCloudUpdate = false;
       }
-      isApplyingCloudUpdate = false;
-      showToast("Data gesynchroniseerd vanuit Firestore! ☁️", "success");
+
+      // 2. Bestaat er al een opgeslagen rol voor deze gebruiker?
+      const cloudAuth = data?.authData || (data?.userRole ? {
+        loggedIn: true,
+        email: user.email || user.displayName || 'Ingelogd',
+        role: data.userRole,
+        teamCode: data.teamCode || null,
+        playerId: data.playerId || null
+      } : null);
+
+      if (cloudAuth && cloudAuth.role && (cloudAuth.role === 'coach' || (cloudAuth.role === 'player' && cloudAuth.playerId))) {
+        // Al eerder ingesteld: direct doorstarten naar de app!
+        cloudAuth.loggedIn = true;
+        cloudAuth.email = user.email || user.displayName || cloudAuth.email;
+        if (typeof window.setCoachBoardAuth === "function") {
+          window.setCoachBoardAuth(cloudAuth);
+        }
+        notifyToast(`Welkom terug, ${user.displayName || user.email || ''}!`, "success");
+      } else {
+        // Eerste keer inloggen of nog geen rol gekozen -> vraag rolkeuze
+        if (typeof window.onFirebaseAuthNeedsRole === "function") {
+          window.onFirebaseAuthNeedsRole(user);
+        }
+      }
     } else {
-      // 2. Eerste keer inloggen: zet huidige localStorage data over naar Firestore
+      // 2. Eerste keer inloggen: document aanmaken in Firestore
       const localState = (typeof window.getCoachBoardState === "function") 
         ? window.getCoachBoardState() 
         : null;
+      const localAuth = (typeof window.getCoachBoardAuth === "function")
+        ? window.getCoachBoardAuth()
+        : null;
 
-      if (localState) {
-        await setDoc(userDocRef, {
-          email: user.email,
-          displayName: user.displayName || "",
-          photoURL: user.photoURL || "",
-          updatedAt: new Date().toISOString(),
-          coachboardState: localState
-        }, { merge: true });
-        showToast("Lokale data succesvol overgezet naar Firestore! ☁️", "success");
+      await setDoc(userDocRef, {
+        email: user.email || "",
+        displayName: user.displayName || "",
+        photoURL: user.photoURL || "",
+        updatedAt: new Date().toISOString(),
+        coachboardState: localState || {},
+        authData: (localAuth && localAuth.role) ? localAuth : { loggedIn: true, email: user.email, role: null, teamCode: null }
+      }, { merge: true });
+
+      if (localAuth && localAuth.role && (localAuth.role === 'coach' || (localAuth.role === 'player' && localAuth.playerId))) {
+        if (typeof window.setCoachBoardAuth === "function") {
+          window.setCoachBoardAuth(localAuth);
+        }
+      } else {
+        if (typeof window.onFirebaseAuthNeedsRole === "function") {
+          window.onFirebaseAuthNeedsRole(user);
+        }
       }
     }
 
@@ -155,13 +175,16 @@ async function initUserFirestoreData(user) {
     if (unsubscribeFirestore) unsubscribeFirestore();
     unsubscribeFirestore = onSnapshot(userDocRef, (snapshot) => {
       if (isApplyingCloudUpdate) return;
-      if (snapshot.exists() && snapshot.data()?.coachboardState) {
-        const cloudState = snapshot.data().coachboardState;
-        isApplyingCloudUpdate = true;
-        if (typeof window.setCoachBoardState === "function") {
-          window.setCoachBoardState(cloudState);
+      if (snapshot.exists()) {
+        const snapData = snapshot.data();
+        if (snapData?.coachboardState) {
+          const cloudState = snapData.coachboardState;
+          isApplyingCloudUpdate = true;
+          if (typeof window.setCoachBoardState === "function") {
+            window.setCoachBoardState(cloudState);
+          }
+          isApplyingCloudUpdate = false;
         }
-        isApplyingCloudUpdate = false;
       }
     }, (err) => {
       console.warn("Firestore snapshot listener:", err);
@@ -169,11 +192,11 @@ async function initUserFirestoreData(user) {
 
   } catch (err) {
     console.error("Fout bij ophalen/migreren Firestore data:", err);
-    showToast("Firestore verbinding: controleer Firestore Rules in console", "warning", 5000);
+    notifyToast("Firestore verbinding: controleer Firestore Rules", "warning", 4500);
   }
 }
 
-// ─── Cloud Sync: Automatisch opslaan naar Firestore ───────────
+// ─── Cloud Sync: Automatisch opslaan van app state naar Firestore ───
 window.syncStateToCloud = function(state) {
   if (!currentUser || isApplyingCloudUpdate) return;
 
@@ -182,7 +205,7 @@ window.syncStateToCloud = function(state) {
     try {
       const userDocRef = doc(db, "users", currentUser.uid);
       await setDoc(userDocRef, {
-        email: currentUser.email,
+        email: currentUser.email || "",
         displayName: currentUser.displayName || "",
         updatedAt: new Date().toISOString(),
         coachboardState: state
@@ -193,23 +216,45 @@ window.syncStateToCloud = function(state) {
   }, 400); // 400ms debounce
 };
 
+// ─── Cloud Sync: Opslaan van gekozen rol en profiel naar Firestore ───
+window.syncAuthToCloud = function(authData) {
+  if (!currentUser) return;
+  try {
+    const userDocRef = doc(db, "users", currentUser.uid);
+    setDoc(userDocRef, {
+      authData: authData,
+      userRole: authData?.role || null,
+      teamCode: authData?.teamCode || null,
+      playerId: authData?.playerId || null,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.error("Fout bij opslaan auth naar Firestore:", err);
+  }
+};
+
 // ─── Handmatige Sync Knop ────────────────────────────────────
 async function handleManualSync() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    notifyToast("Log eerst in om naar de cloud te synchroniseren.", "warning");
+    return;
+  }
   const localState = typeof window.getCoachBoardState === "function" ? window.getCoachBoardState() : null;
+  const localAuth = typeof window.getCoachBoardAuth === "function" ? window.getCoachBoardAuth() : null;
   if (!localState) return;
 
   try {
     const userDocRef = doc(db, "users", currentUser.uid);
     await setDoc(userDocRef, {
-      email: currentUser.email,
+      email: currentUser.email || "",
       displayName: currentUser.displayName || "",
       updatedAt: new Date().toISOString(),
-      coachboardState: localState
+      coachboardState: localState,
+      authData: localAuth
     }, { merge: true });
-    showToast("Data succesvol gesynchroniseerd met Firestore! ☁️", "success");
+    notifyToast("Data succesvol gesynchroniseerd met Firestore! ☁️", "success");
   } catch (err) {
-    showToast("Synchronisatie mislukt: " + err.message, "error");
+    notifyToast("Synchronisatie mislukt: " + err.message, "error");
   }
 }
 
@@ -227,64 +272,40 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// ─── Inloggen met Google ──────────────────────────────────────
-async function handleGoogleSignIn() {
+// ─── Inloggen met Google OAuth ────────────────────────────────
+export async function handleGoogleSignIn() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
-    const name = result.user.displayName || result.user.email;
-    showToast(`Welkom, ${name}!`, "success");
-    closeSettingsDropdown();
+    const user = result.user;
+    const name = user.displayName || user.email;
+    notifyToast(`Ingelogd als ${name}`, "success");
   } catch (err) {
     if (err.code === "auth/popup-closed-by-user") return;
     if (err.code === "auth/unauthorized-domain") {
-      showToast("Domein nog niet geautoriseerd in Firebase Auth", "error", 5000);
+      notifyToast("Domein nog niet geautoriseerd in Firebase Auth", "error", 5000);
       return;
     }
-    showToast(`Inloggen mislukt: ${err.message}`, "error");
+    notifyToast(`Google login mislukt: ${err.message}`, "error");
   }
 }
+window.handleGoogleSignIn = handleGoogleSignIn;
 
 // ─── Uitloggen ───────────────────────────────────────────────
-async function handleLogout() {
+export async function handleFirebaseLogout() {
   try {
     await signOut(auth);
-    showToast("Uitgelogd", "info");
-    closeSettingsDropdown();
+    notifyToast("Uitgelogd", "info");
   } catch (err) {
-    showToast("Uitloggen mislukt", "error");
+    notifyToast("Uitloggen mislukt", "error");
   }
 }
+window.handleFirebaseLogout = handleFirebaseLogout;
 
 // ─── Event listeners koppelen ─────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  const gearBtn = document.getElementById("settingsGearBtn");
-  const closeBtn = document.getElementById("closeSettingsDropdown");
-  const loginBtn = document.getElementById("googleLoginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
+  const loginGoogleBtn = document.getElementById("googleLoginBtn");
   const manualSyncBtn = document.getElementById("manualSyncBtn");
 
-  gearBtn?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleSettingsDropdown();
-  });
-
-  closeBtn?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeSettingsDropdown();
-  });
-
-  loginBtn?.addEventListener("click", handleGoogleSignIn);
-  logoutBtn?.addEventListener("click", handleLogout);
+  loginGoogleBtn?.addEventListener("click", handleGoogleSignIn);
   manualSyncBtn?.addEventListener("click", handleManualSync);
-
-  // Sluit dropdown bij klikken buiten de popup
-  document.addEventListener("click", (e) => {
-    const dropdown = document.getElementById("settingsDropdown");
-    const gear = document.getElementById("settingsGearBtn");
-    if (dropdown && dropdown.style.display !== "none") {
-      if (!dropdown.contains(e.target) && !gear?.contains(e.target)) {
-        closeSettingsDropdown();
-      }
-    }
-  });
 });
