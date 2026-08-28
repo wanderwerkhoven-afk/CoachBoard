@@ -4553,7 +4553,10 @@ function ensureTeamCode(){
   }
   return state.teamCode;
 }
-function updatePlayerTeamCodeState(){
+let lastLookedUpTeamCode = '';
+let lookupDebounceTimer = null;
+
+async function updatePlayerTeamCodeState(){
   const codeInput=document.getElementById('playerTeamCode');
   const block=document.getElementById('playerIdentityBlock');
   const hint=document.getElementById('playerTeamCodeHint');
@@ -4562,40 +4565,72 @@ function updatePlayerTeamCodeState(){
   if(!codeInput || !block || !joinBtn || !select)return;
 
   const code=codeInput.value.trim().toUpperCase();
-  const valid=code.length>=4 && code===ensureTeamCode();
 
-  block.hidden=!valid;
-  if(hint)hint.hidden=valid;
-
-  if(valid){
-    populatePlayerIdentitySelect();
-    joinBtn.disabled=!select.value;
-  }else{
-    select.value='';
+  if(code.length < 3){
+    block.hidden=true;
+    if(hint){
+      hint.hidden=false;
+      hint.textContent='Vul de teamcode in die je van je coach hebt ontvangen.';
+    }
     select.innerHTML='<option value="">Selecteer je naam</option>';
     joinBtn.disabled=true;
+    return;
   }
+
+  // If matches local team immediately
+  if(code === (state.teamCode || '').toUpperCase()){
+    block.hidden=false;
+    if(hint)hint.hidden=true;
+    populatePlayerIdentitySelect();
+    joinBtn.disabled=!select.value;
+    return;
+  }
+
+  // Check remote Firestore team
+  clearTimeout(lookupDebounceTimer);
+  lookupDebounceTimer = setTimeout(async ()=>{
+    if(typeof window.fetchTeamDataByCode === 'function'){
+      if(hint){
+        hint.hidden=false;
+        hint.textContent='Team zoeken in de cloud... ⏳';
+      }
+      const fetchedData = await window.fetchTeamDataByCode(code);
+      if(fetchedData && Array.isArray(fetchedData.players) && fetchedData.players.length > 0){
+        block.hidden=false;
+        if(hint)hint.hidden=true;
+        selPopulateWithList(fetchedData.players);
+        joinBtn.disabled=!select.value;
+      }else{
+        block.hidden=true;
+        if(hint){
+          hint.hidden=false;
+          hint.textContent='Geen team gevonden met code "'+code+'". Controleer de code.';
+        }
+        select.innerHTML='<option value="">Selecteer je naam</option>';
+        joinBtn.disabled=true;
+      }
+    }
+  }, 350);
+}
+
+function selPopulateWithList(playersList){
+  const sel=document.getElementById('playerIdentitySelect');
+  if(!sel)return;
+  sel.innerHTML='<option value="">Selecteer je naam</option>'+
+    playersList
+      .slice()
+      .sort((a,b)=>a.name.localeCompare(b.name,'nl'))
+      .map(p=>`<option value="${p.id}">${esc(p.name)}</option>`)
+      .join('');
 }
 
 function populatePlayerIdentitySelect(){
   const sel=document.getElementById('playerIdentitySelect');
   if(!sel)return;
 
-  const code=(document.getElementById('playerTeamCode')?.value||'').trim().toUpperCase();
-  if(code!==ensureTeamCode()){
-    sel.innerHTML='<option value="">Selecteer je naam</option>';
-    return;
-  }
-
   const current=sel.value;
-  sel.innerHTML='<option value="">Selecteer je naam</option>'+
-    state.players
-      .slice()
-      .sort((a,b)=>a.name.localeCompare(b.name,'nl'))
-      .map(p=>`<option value="${p.id}">${esc(p.name)}</option>`)
-      .join('');
-
-  if(state.players.some(p=>p.id===current))sel.value=current;
+  selPopulateWithList(state.players);
+  if(current && state.players.some(p=>p.id===current))sel.value=current;
 }
 
 function authGet(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch(e){return null}}
@@ -4723,15 +4758,49 @@ document.getElementById('playerCodeBack')?.addEventListener('click',()=>{
   updatePlayerTeamCodeState();
   authStep('roleStep');
 });
-document.getElementById('joinTeamBtn')?.addEventListener('click',()=>{
+document.getElementById('directPlayerCodeBtn')?.addEventListener('click',()=>{
+  const a=authGet()||{};
+  a.role='player';
+  a.loggedIn=true;
+  a.email='Speler';
+  authSave(a);
+
+  const codeInput=document.getElementById('playerTeamCode');
+  const playerSelect=document.getElementById('playerIdentitySelect');
+  if(codeInput)codeInput.value='';
+  if(playerSelect){
+    playerSelect.value='';
+    playerSelect.innerHTML='<option value="">Selecteer je naam</option>';
+  }
+
+  authStep('playerCodeStep');
+  updatePlayerTeamCodeState();
+  setTimeout(()=>codeInput?.focus(),30);
+});
+
+document.getElementById('joinTeamBtn')?.addEventListener('click',async()=>{
   const code=document.getElementById('playerTeamCode').value.trim().toUpperCase();
   const playerId=document.getElementById('playerIdentitySelect').value;
+  const joinBtn=document.getElementById('joinTeamBtn');
 
-  if(code!==ensureTeamCode()){
-    alert('Deze teamcode hoort niet bij een geldig team.');
-    updatePlayerTeamCodeState();
+  if(!code){
+    alert('Vul een teamcode in.');
     return;
   }
+
+  // Check if team is available locally or fetch from Firestore
+  if(typeof window.fetchTeamDataByCode==='function'){
+    joinBtn.disabled=true;
+    joinBtn.textContent='Team ophalen...';
+    const fetched=await window.fetchTeamDataByCode(code);
+    joinBtn.disabled=false;
+    joinBtn.textContent='Team koppelen';
+    if(!fetched){
+      alert('Team met code "'+code+'" is niet gevonden in de cloud.');
+      return;
+    }
+  }
+
   if(!playerId){
     alert('Selecteer je eigen spelersprofiel.');
     return;
@@ -4907,8 +4976,9 @@ document.getElementById('playerTeamCode')?.addEventListener('input',()=>{
 document.getElementById('playerIdentitySelect')?.addEventListener('change',()=>{
   const joinBtn=document.getElementById('joinTeamBtn');
   const code=(document.getElementById('playerTeamCode')?.value||'').trim().toUpperCase();
+  const playerId=document.getElementById('playerIdentitySelect')?.value;
   if(joinBtn){
-    joinBtn.disabled=!(code===ensureTeamCode() && document.getElementById('playerIdentitySelect')?.value);
+    joinBtn.disabled=!(code && playerId);
   }
 });
 

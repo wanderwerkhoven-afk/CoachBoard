@@ -97,6 +97,64 @@ function updateAuthUI(user) {
   }
 }
 
+let currentTeamCode = null;
+let unsubscribeTeamListener = null;
+
+// ─── Ophalen van teamdata op basis van Teamcode ───────────────
+export async function fetchTeamDataByCode(code) {
+  if (!code) return null;
+  const formattedCode = code.toUpperCase().trim();
+  try {
+    const teamDocRef = doc(db, "teams", formattedCode);
+    const snap = await getDoc(teamDocRef);
+    if (snap.exists()) {
+      const teamData = snap.data();
+      if (teamData?.coachboardState) {
+        // Laad in CoachBoard state
+        isApplyingCloudUpdate = true;
+        if (typeof window.setCoachBoardState === "function") {
+          window.setCoachBoardState(teamData.coachboardState);
+        }
+        isApplyingCloudUpdate = false;
+        listenToTeamUpdates(formattedCode);
+        return teamData.coachboardState;
+      }
+    }
+  } catch (err) {
+    console.warn("Fout bij ophalen team via code:", err);
+  }
+  return null;
+}
+window.fetchTeamDataByCode = fetchTeamDataByCode;
+
+// ─── Real-time luisteren naar team updates ────────────────────
+function listenToTeamUpdates(teamCode) {
+  if (!teamCode || teamCode === currentTeamCode) return;
+  currentTeamCode = teamCode;
+
+  if (unsubscribeTeamListener) {
+    unsubscribeTeamListener();
+    unsubscribeTeamListener = null;
+  }
+
+  const teamDocRef = doc(db, "teams", teamCode);
+  unsubscribeTeamListener = onSnapshot(teamDocRef, (snapshot) => {
+    if (isApplyingCloudUpdate) return;
+    if (snapshot.exists()) {
+      const snapData = snapshot.data();
+      if (snapData?.coachboardState) {
+        isApplyingCloudUpdate = true;
+        if (typeof window.setCoachBoardState === "function") {
+          window.setCoachBoardState(snapData.coachboardState);
+        }
+        isApplyingCloudUpdate = false;
+      }
+    }
+  }, (err) => {
+    console.warn("Team snapshot listener:", err);
+  });
+}
+
 // ─── Initialiseer Gebruikersdata & Firestore Sync ────────────
 async function initUserFirestoreData(user) {
   currentUser = user;
@@ -129,21 +187,21 @@ async function initUserFirestoreData(user) {
       } : null);
 
       if (cloudAuth && cloudAuth.role && (cloudAuth.role === 'coach' || (cloudAuth.role === 'player' && cloudAuth.playerId))) {
-        // Al eerder ingesteld: direct doorstarten naar de app!
         cloudAuth.loggedIn = true;
         cloudAuth.email = user.email || user.displayName || cloudAuth.email;
         if (typeof window.setCoachBoardAuth === "function") {
           window.setCoachBoardAuth(cloudAuth);
         }
+        if (cloudAuth.teamCode) {
+          listenToTeamUpdates(cloudAuth.teamCode);
+        }
         notifyToast(`Welkom terug, ${user.displayName || user.email || ''}!`, "success");
       } else {
-        // Eerste keer inloggen of nog geen rol gekozen -> vraag rolkeuze
         if (typeof window.onFirebaseAuthNeedsRole === "function") {
           window.onFirebaseAuthNeedsRole(user);
         }
       }
     } else {
-      // 2. Eerste keer inloggen: document aanmaken in Firestore
       const localState = (typeof window.getCoachBoardState === "function") 
         ? window.getCoachBoardState() 
         : null;
@@ -164,6 +222,9 @@ async function initUserFirestoreData(user) {
         if (typeof window.setCoachBoardAuth === "function") {
           window.setCoachBoardAuth(localAuth);
         }
+        if (localAuth.teamCode) {
+          listenToTeamUpdates(localAuth.teamCode);
+        }
       } else {
         if (typeof window.onFirebaseAuthNeedsRole === "function") {
           window.onFirebaseAuthNeedsRole(user);
@@ -171,7 +232,7 @@ async function initUserFirestoreData(user) {
       }
     }
 
-    // 3. Real-time luisteren naar cloud updates
+    // 3. Real-time luisteren naar cloud updates van de gebruiker
     if (unsubscribeFirestore) unsubscribeFirestore();
     unsubscribeFirestore = onSnapshot(userDocRef, (snapshot) => {
       if (isApplyingCloudUpdate) return;
@@ -196,20 +257,38 @@ async function initUserFirestoreData(user) {
   }
 }
 
-// ─── Cloud Sync: Automatisch opslaan van app state naar Firestore ───
+// ─── Cloud Sync: Automatisch opslaan van app state naar Firestore (onder User én Team!) ───
 window.syncStateToCloud = function(state) {
-  if (!currentUser || isApplyingCloudUpdate) return;
+  if (isApplyingCloudUpdate) return;
 
   clearTimeout(cloudSyncTimeout);
   cloudSyncTimeout = setTimeout(async () => {
     try {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      await setDoc(userDocRef, {
-        email: currentUser.email || "",
-        displayName: currentUser.displayName || "",
-        updatedAt: new Date().toISOString(),
-        coachboardState: state
-      }, { merge: true });
+      const authData = (typeof window.getCoachBoardAuth === "function") ? window.getCoachBoardAuth() : null;
+      const teamCode = (authData?.teamCode || state?.teamCode || "").toUpperCase().trim();
+
+      // 1. Sla op onder /teams/{teamCode} zodat spelers en coaches direct synchroniseren!
+      if (teamCode) {
+        const teamDocRef = doc(db, "teams", teamCode);
+        await setDoc(teamDocRef, {
+          teamCode: teamCode,
+          teamName: state.teamName || "Mijn Team",
+          updatedAt: new Date().toISOString(),
+          coachboardState: state
+        }, { merge: true });
+        listenToTeamUpdates(teamCode);
+      }
+
+      // 2. Sla op onder /users/{uid} als de gebruiker ingelogd is met Google/e-mail
+      if (currentUser) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        await setDoc(userDocRef, {
+          email: currentUser.email || "",
+          displayName: currentUser.displayName || "",
+          updatedAt: new Date().toISOString(),
+          coachboardState: state
+        }, { merge: true });
+      }
     } catch (err) {
       console.error("Fout bij opslaan naar Firestore:", err);
     }
@@ -218,6 +297,11 @@ window.syncStateToCloud = function(state) {
 
 // ─── Cloud Sync: Opslaan van gekozen rol en profiel naar Firestore ───
 window.syncAuthToCloud = function(authData) {
+  const teamCode = (authData?.teamCode || "").toUpperCase().trim();
+  if (teamCode) {
+    listenToTeamUpdates(teamCode);
+  }
+
   if (!currentUser) return;
   try {
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -308,4 +392,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loginGoogleBtn?.addEventListener("click", handleGoogleSignIn);
   manualSyncBtn?.addEventListener("click", handleManualSync);
+
+  // ─── Herstel speler-sessie zonder Google-login ─────────────
+  // Als een speler eerder zijn teamCode en playerId heeft opgeslagen in
+  // localStorage, herstel dan de live Firestore-listener direct bij
+  // het laden van de pagina (geen Google-login nodig!).
+  try {
+    const AUTH_KEY = "coachboard_v1_auth";
+    const savedAuth = JSON.parse(localStorage.getItem(AUTH_KEY) || "null");
+    if (savedAuth?.role === "player" && savedAuth?.teamCode && savedAuth?.playerId) {
+      const code = savedAuth.teamCode.toUpperCase().trim();
+      // Start luisteren naar team updates zodat speler live data krijgt
+      listenToTeamUpdates(code);
+      // Laad de team data direct in
+      fetchTeamDataByCode(code).catch(() => {});
+    }
+  } catch (e) {
+    // Geen opgeslagen sessie, negeer
+  }
 });
