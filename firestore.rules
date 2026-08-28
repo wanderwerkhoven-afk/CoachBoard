@@ -2,15 +2,33 @@
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Teams (lezen is openbaar voor iedereen met de teamcode) ────────────
-    // Spelers hoeven NIET ingelogd te zijn om de teamdata te lezen.
-    // Schrijven is ook toegestaan zonder login (spelers slaan beschikbaarheid op).
+    // ─── Teams ───────────────────────────────────────────────────────────────
+    // Iedereen met de teamcode mag lezen (spelers, coach, onboarding).
+    // Schrijven naar het hoofd-document mag alleen voor geauthenticeerde
+    // coaches (Google-login). Anonieme gebruikers vallen hier NIET onder.
     match /teams/{teamCode} {
-      allow read: if true;          // Iedereen met de teamcode kan lezen
-      allow write: if true;         // Spelers (zonder Google-login) kunnen ook schrijven
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email != null;
+
+      // ─── Speler-subcollectie ────────────────────────────────────────────
+      // Lezen: iedereen (coach heeft de spelerslijst nodig voor live sync).
+      // Schrijven: alleen de speler zelf (geverifieerd via firebaseUid).
+      // Aanmaken: de speler koppelt zijn eigen uid bij de eerste login.
+      match /players/{playerId} {
+        allow read: if true;
+
+        // Update: alleen als het bestaande document van dezelfde Firebase uid is
+        allow update: if request.auth != null
+                      && resource.data.firebaseUid == request.auth.uid;
+
+        // Create: speler mag zijn eigen document aanmaken
+        allow create: if request.auth != null
+                      && request.resource.data.firebaseUid == request.auth.uid;
+      }
     }
 
-    // ─── Gebruikers (alleen eigen data) ─────────────────────────────────────
+    // ─── Gebruikers (coaches) ────────────────────────────────────────────────
+    // Alleen eigen data, alleen ingelogde gebruikers.
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

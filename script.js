@@ -142,6 +142,44 @@ window.setCoachBoardState=function(newState){
     renderAll();
   }
 };
+
+// ─── Live update van één speler vanuit Firestore (speler-subcollectie) ─
+// Wordt aangeroepen door auth.js onSnapshot op /teams/{code}/players/
+window.mergePlayerUpdate = function(playerId, playerData) {
+  // Update naam als de speler zijn naam heeft gewijzigd
+  const player = state.players.find(p => p.id === playerId);
+  if (!player) return;
+
+  let changed = false;
+  if (playerData.name && playerData.name !== player.name) {
+    player.name = playerData.name;
+    changed = true;
+  }
+  if (playerData.preferredAvailability && playerData.preferredAvailability !== player.preferredAvailability) {
+    player.preferredAvailability = playerData.preferredAvailability;
+    changed = true;
+  }
+
+  // Merge per-wedstrijd beschikbaarheid
+  if (playerData.matchAvailability && typeof playerData.matchAvailability === 'object') {
+    Object.entries(playerData.matchAvailability).forEach(([matchId, status]) => {
+      const match = state.matches.find(m => m.id === matchId);
+      if (match) {
+        if (!match.availability) match.availability = {};
+        if (match.availability[playerId] !== status) {
+          match.availability[playerId] = status;
+          changed = true;
+        }
+      }
+    });
+  }
+
+  if (changed) {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    renderAll();
+  }
+};
+
 function uid(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
 function formatDateNL(value){
   if(!value)return '—';
@@ -4773,10 +4811,16 @@ document.getElementById('directPlayerCodeBtn')?.addEventListener('click',()=>{
     playerSelect.innerHTML='<option value="">Selecteer je naam</option>';
   }
 
+  // Start anoniem inloggen op de achtergrond (geen wachten nodig)
+  if(typeof window.signInPlayerAnonymously==='function'){
+    window.signInPlayerAnonymously();
+  }
+
   authStep('playerCodeStep');
   updatePlayerTeamCodeState();
   setTimeout(()=>codeInput?.focus(),30);
 });
+
 
 document.getElementById('joinTeamBtn')?.addEventListener('click',async()=>{
   const code=document.getElementById('playerTeamCode').value.trim().toUpperCase();
@@ -4788,7 +4832,12 @@ document.getElementById('joinTeamBtn')?.addEventListener('click',async()=>{
     return;
   }
 
-  // Check if team is available locally or fetch from Firestore
+  // Log anoniem in zodat Firestore security rules werken (geen Gmail nodig)
+  if(typeof window.signInPlayerAnonymously==='function'){
+    await window.signInPlayerAnonymously();
+  }
+
+  // Haal team op vanuit Firestore als het nog niet lokaal staat
   if(typeof window.fetchTeamDataByCode==='function'){
     joinBtn.disabled=true;
     joinBtn.textContent='Team ophalen...';
@@ -4796,13 +4845,13 @@ document.getElementById('joinTeamBtn')?.addEventListener('click',async()=>{
     joinBtn.disabled=false;
     joinBtn.textContent='Team koppelen';
     if(!fetched){
-      alert('Team met code "'+code+'" is niet gevonden in de cloud.');
+      alert('Team met code "'+code+'" is niet gevonden. Controleer de code bij je coach.');
       return;
     }
   }
 
   if(!playerId){
-    alert('Selecteer je eigen spelersprofiel.');
+    alert('Selecteer je eigen naam uit de lijst.');
     return;
   }
 
@@ -4819,10 +4868,17 @@ document.getElementById('joinTeamBtn')?.addEventListener('click',async()=>{
   a.teamCode=code;
   a.playerId=playerId;
   authSave(a);
+
+  // Koppel Firebase uid aan player-document zodat Firestore-rules schrijven toestaan
+  if(typeof window.linkPlayerToFirebase==='function'){
+    window.linkPlayerToFirebase(code, playerId);
+  }
+
   const linkedPlayer=state.players.find(p=>p.id===playerId);
   showToast(`Gekoppeld aan ${linkedPlayer?.name||'je spelersprofiel'}.`,'success','Team gekoppeld');
   authApply();
 });
+
 document.getElementById('openSettingsBtn')?.addEventListener('click',(e)=>{
   e.preventDefault();
   e.stopPropagation();
