@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getAuth,
   signInWithPopup,
@@ -547,6 +547,52 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("googleLoginBtn")?.addEventListener("click", handleGoogleSignIn);
   document.getElementById("inviteGoogleBtn")?.addEventListener("click", handleGoogleSignIn);
 
+  // Invite keuze: Email Registratie openen
+  document.getElementById("inviteShowEmailBtn")?.addEventListener("click", () => {
+    document.getElementById("inviteStep").hidden = true;
+    const regStep = document.getElementById("inviteEmailRegisterStep");
+    if (regStep) {
+      regStep.hidden = false;
+      const playerName = currentPendingInvite?.playerName || "het team";
+      const nameEl = document.getElementById("inviteEmailPlayerName");
+      if (nameEl) nameEl.textContent = playerName;
+    }
+  });
+
+  // Invite: Terug naar keuzemenu
+  document.getElementById("inviteBackToChoiceBtn")?.addEventListener("click", () => {
+    document.getElementById("inviteEmailRegisterStep").hidden = true;
+    document.getElementById("inviteStep").hidden = false;
+  });
+
+  // Invite: Al een account? Ga naar login scherm
+  document.getElementById("inviteAlreadyAccountBtn")?.addEventListener("click", () => {
+    document.getElementById("inviteStep").hidden = true;
+    document.getElementById("loginStep").hidden = false;
+  });
+
+  // Invite: E-mail registratie formulier met wachtwoord verificatie (2x invullen)
+  document.getElementById("inviteEmailRegisterForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("inviteRegEmail")?.value.trim();
+    const pass = document.getElementById("inviteRegPassword")?.value;
+    const passConfirm = document.getElementById("inviteRegPasswordConfirm")?.value;
+
+    if (!email || !pass) return;
+
+    if (pass !== passConfirm) {
+      notifyToast("Wachtwoorden komen niet overeen. Typ ze allebei opnieuw.", "error", 4000);
+      return;
+    }
+    if (pass.length < 6) {
+      notifyToast("Wachtwoord moet minimaal 6 tekens bevatten.", "error", 4000);
+      return;
+    }
+
+    handleEmailRegister(email, pass);
+  });
+
+  // Standaard Login / Registratie formulieren
   document.getElementById("emailLoginForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const email = document.getElementById("loginEmail")?.value.trim();
@@ -561,13 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (email && pass) handleEmailRegister(email, pass);
   });
 
-  document.getElementById("inviteEmailForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const email = document.getElementById("inviteEmail")?.value.trim();
-    const pass = document.getElementById("invitePassword")?.value;
-    if (email && pass) handleEmailRegister(email, pass);
-  });
-
   document.getElementById("showRegisterBtn")?.addEventListener("click", () => {
     document.getElementById("loginStep").hidden = true;
     document.getElementById("registerStep").hidden = false;
@@ -578,3 +617,4 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginStep").hidden = false;
   });
 });
+

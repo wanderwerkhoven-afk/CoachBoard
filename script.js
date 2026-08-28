@@ -4745,10 +4745,11 @@ function settingsUpdate(){
     authSave(a);
     document.getElementById('coachTeamCode').textContent=teamCode;
   }else{
-    document.getElementById('playerTeamCodeSettings').textContent=a.teamCode||teamCode;
     const player=state.players.find(p=>p.id===a.playerId);
-    document.getElementById('settingsLinkedPlayer').textContent=
-      player?`Spelersprofiel: ${player.name}`:'Geen spelersprofiel gekoppeld';
+    const linked=document.getElementById('settingsLinkedPlayer');
+    if(linked){
+      linked.textContent=player ? `${state.teamName||'Mijn Team'} · ${player.name}` : (state.teamName||'Mijn Team');
+    }
     const nameInput=document.getElementById('settingsPlayerName');
     if(nameInput)nameInput.value=player?.name||'';
   }
