@@ -77,16 +77,16 @@ function updateAuthUI(user) {
   const cloudText = document.getElementById("cloudStatusText");
 
   if (user) {
-    if (cloudBadge) { cloudBadge.className = "cloud-status-badge online"; cloudBadge.title = "Online (Firestore Cloud Sync)"; }
-    if (cloudText) cloudText.textContent = "Online (Cloud Sync)";
+    if (cloudBadge) { cloudBadge.className = "cloud-status-badge online"; cloudBadge.title = "Online (Verbonden met cloud)"; }
+    if (cloudText) cloudText.textContent = "Online";
     if (settingsEmail) settingsEmail.textContent = user.email || user.displayName || "Ingelogd";
     if (userAvatar) {
       if (user.photoURL) { userAvatar.src = user.photoURL; userAvatar.style.display = "inline-block"; }
       else userAvatar.style.display = "none";
     }
   } else {
-    if (cloudBadge) { cloudBadge.className = "cloud-status-badge offline"; cloudBadge.title = "Lokaal opgeslagen"; }
-    if (cloudText) cloudText.textContent = "Offline / Lokaal";
+    if (cloudBadge) { cloudBadge.className = "cloud-status-badge offline"; cloudBadge.title = "Offline (Lokaal)"; }
+    if (cloudText) cloudText.textContent = "Offline";
     if (userAvatar) userAvatar.style.display = "none";
   }
 }
