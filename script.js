@@ -5324,6 +5324,10 @@ initTeamColors();
 
 // Modal Open / Sluit Handlers
 function openTeamColorsModal() {
+  // Sluit eerst het instellingen modal direct
+  const settingsModal = document.getElementById('settingsModal');
+  if (settingsModal) settingsModal.classList.remove('show');
+
   const modal = document.getElementById('teamColorsModal');
   if (!modal) return;
   const prim = state.primaryColor || '#c62828';
