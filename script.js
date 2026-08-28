@@ -142,6 +142,9 @@ window.setCoachBoardState=function(newState){
   if(newState && typeof newState==='object'){
     state=newState;
     localStorage.setItem(KEY,JSON.stringify(state));
+    if(typeof applyTeamColors==='function'){
+      applyTeamColors(state.primaryColor, state.secondaryColor);
+    }
     renderAll();
   }
 };
@@ -4774,6 +4777,9 @@ function settingsUpdate(){
   const profileSection=document.getElementById('playerProfileSettingsSection');
   if(profileSection)profileSection.hidden=a.role!=='player';
 
+  const teamColorsSection=document.getElementById('coachTeamColorsSection');
+  if(teamColorsSection)teamColorsSection.hidden=a.role!=='coach';
+
   if(a.role==='coach'){
     a.teamCode=teamCode;
     authSave(a);
@@ -5239,3 +5245,221 @@ window.onFirebaseAuthNeedsRole = function(user) {
     }
   }
 };
+
+// ─── Teamkleuren Beheer (Hoofdkleur & Secundaire kleur) ────────
+function hexToRgb(hex) {
+  if (!hex) return null;
+  let c = hex.replace('#', '').trim();
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  if (c.length !== 6) return null;
+  const num = parseInt(c, 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+function adjustHex(hex, factor) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  const adjust = (val) => Math.max(0, Math.min(255, Math.round(val * factor)));
+  const r = adjust(rgb.r).toString(16).padStart(2, '0');
+  const g = adjust(rgb.g).toString(16).padStart(2, '0');
+  const b = adjust(rgb.b).toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`;
+}
+
+function applyTeamColors(primary, secondary) {
+  const prim = primary || '#c62828';
+  const sec = secondary || '#8e1b1b';
+
+  const root = document.documentElement;
+  const rgbP = hexToRgb(prim) || { r: 198, g: 40, b: 40 };
+  const rgbS = hexToRgb(sec) || { r: 142, g: 27, b: 27 };
+
+  // 1. Hoofdkleur variabelen
+  root.style.setProperty('--primary-color', prim);
+  root.style.setProperty('--primary-dark', adjustHex(prim, 0.72));
+  root.style.setProperty('--primary-soft', `rgba(${rgbP.r}, ${rgbP.g}, ${rgbP.b}, 0.12)`);
+  root.style.setProperty('--primary-soft-dark', `rgba(${rgbP.r}, ${rgbP.g}, ${rgbP.b}, 0.22)`);
+  root.style.setProperty('--primary-dark-dark', adjustHex(prim, 1.4));
+
+  // 2. Secundaire kleur variabelen
+  root.style.setProperty('--secondary-color', sec);
+
+  // 3. Light mode blobs (secundair + primair)
+  root.style.setProperty('--blob-1', `rgba(${rgbP.r}, ${rgbP.g}, ${rgbP.b}, 0.22)`);
+  root.style.setProperty('--blob-2', `rgba(${rgbP.r}, ${rgbP.g}, ${rgbP.b}, 0.14)`);
+  root.style.setProperty('--blob-3', `rgba(${rgbP.r}, ${rgbP.g}, ${rgbP.b}, 0.06)`);
+
+  root.style.setProperty('--blob-sec-1', `rgba(${rgbS.r}, ${rgbS.g}, ${rgbS.b}, 0.22)`);
+  root.style.setProperty('--blob-sec-2', `rgba(${rgbS.r}, ${rgbS.g}, ${rgbS.b}, 0.14)`);
+  root.style.setProperty('--blob-sec-3', `rgba(${rgbS.r}, ${rgbS.g}, ${rgbS.b}, 0.06)`);
+
+  // 4. Dark mode blobs (dieper & intenser)
+  root.style.setProperty('--blob-dark-1', `rgba(${rgbP.r}, ${rgbP.g}, ${rgbP.b}, 0.44)`);
+  root.style.setProperty('--blob-dark-2', `rgba(${Math.round(rgbP.r*0.7)}, ${Math.round(rgbP.g*0.7)}, ${Math.round(rgbP.b*0.7)}, 0.25)`);
+  root.style.setProperty('--blob-dark-3', `rgba(${Math.round(rgbP.r*0.4)}, ${Math.round(rgbP.g*0.4)}, ${Math.round(rgbP.b*0.4)}, 0.10)`);
+
+  root.style.setProperty('--blob-dark-sec-1', `rgba(${rgbS.r}, ${rgbS.g}, ${rgbS.b}, 0.46)`);
+  root.style.setProperty('--blob-dark-sec-2', `rgba(${Math.round(rgbS.r*0.7)}, ${Math.round(rgbS.g*0.7)}, ${Math.round(rgbS.b*0.7)}, 0.26)`);
+  root.style.setProperty('--blob-dark-sec-3', `rgba(${Math.round(rgbS.r*0.4)}, ${Math.round(rgbS.g*0.4)}, ${Math.round(rgbS.b*0.4)}, 0.10)`);
+
+  // 5. Update preview dot in settings
+  const dot = document.getElementById('teamColorsPreviewDot');
+  if (dot) {
+    dot.style.background = `linear-gradient(135deg, ${prim} 50%, ${sec} 50%)`;
+  }
+}
+
+function initTeamColors() {
+  const prim = state.primaryColor || '#c62828';
+  const sec = state.secondaryColor || '#8e1b1b';
+  applyTeamColors(prim, sec);
+}
+
+// Haal kleuren op bij starten
+initTeamColors();
+
+// Modal Open / Sluit Handlers
+function openTeamColorsModal() {
+  const modal = document.getElementById('teamColorsModal');
+  if (!modal) return;
+  const prim = state.primaryColor || '#c62828';
+  const sec = state.secondaryColor || '#8e1b1b';
+
+  const primInput = document.getElementById('primaryColorInput');
+  const primHex = document.getElementById('primaryColorHex');
+  const secInput = document.getElementById('secondaryColorInput');
+  const secHex = document.getElementById('secondaryColorHex');
+
+  if (primInput) primInput.value = prim;
+  if (primHex) primHex.value = prim;
+  if (secInput) secInput.value = sec;
+  if (secHex) secHex.value = sec;
+
+  updateColorPreview(prim, sec);
+  modal.classList.add('show');
+}
+
+function closeTeamColorsModal() {
+  const modal = document.getElementById('teamColorsModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function updateColorPreview(primary, secondary) {
+  const btn = document.getElementById('colorPreviewPrimaryBtn');
+  const pill = document.getElementById('colorPreviewPill');
+  if (btn) {
+    btn.style.background = primary;
+    btn.style.borderColor = primary;
+  }
+  if (pill) {
+    const rgb = hexToRgb(primary) || { r: 198, g: 40, b: 40 };
+    pill.style.background = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`;
+    pill.style.color = primary;
+  }
+
+  // Highlight actieve preset
+  document.querySelectorAll('.color-preset-btn').forEach(preset => {
+    const isMatch = preset.dataset.primary.toLowerCase() === primary.toLowerCase() &&
+                    preset.dataset.secondary.toLowerCase() === secondary.toLowerCase();
+    preset.classList.toggle('active', isMatch);
+  });
+}
+
+// Event Listeners voor Teamkleuren Modal
+document.getElementById('openTeamColorsBtn')?.addEventListener('click', openTeamColorsModal);
+document.getElementById('closeTeamColorsModalBtn')?.addEventListener('click', closeTeamColorsModal);
+document.getElementById('teamColorsModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'teamColorsModal') closeTeamColorsModal();
+});
+
+// Preset Buttons
+document.querySelectorAll('.color-preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = btn.dataset.primary;
+    const s = btn.dataset.secondary;
+    const primInput = document.getElementById('primaryColorInput');
+    const primHex = document.getElementById('primaryColorHex');
+    const secInput = document.getElementById('secondaryColorInput');
+    const secHex = document.getElementById('secondaryColorHex');
+
+    if (primInput) primInput.value = p;
+    if (primHex) primHex.value = p;
+    if (secInput) secInput.value = s;
+    if (secHex) secHex.value = s;
+
+    updateColorPreview(p, s);
+  });
+});
+
+// Color Picker Inputs Synchroon
+document.getElementById('primaryColorInput')?.addEventListener('input', (e) => {
+  const hex = e.target.value;
+  const hexInput = document.getElementById('primaryColorHex');
+  if (hexInput) hexInput.value = hex;
+  const sec = document.getElementById('secondaryColorInput')?.value || '#8e1b1b';
+  updateColorPreview(hex, sec);
+});
+
+document.getElementById('primaryColorHex')?.addEventListener('input', (e) => {
+  let hex = e.target.value.trim();
+  if (!hex.startsWith('#')) hex = '#' + hex;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    const picker = document.getElementById('primaryColorInput');
+    if (picker) picker.value = hex;
+    const sec = document.getElementById('secondaryColorInput')?.value || '#8e1b1b';
+    updateColorPreview(hex, sec);
+  }
+});
+
+document.getElementById('secondaryColorInput')?.addEventListener('input', (e) => {
+  const hex = e.target.value;
+  const hexInput = document.getElementById('secondaryColorHex');
+  if (hexInput) hexInput.value = hex;
+  const prim = document.getElementById('primaryColorInput')?.value || '#c62828';
+  updateColorPreview(prim, hex);
+});
+
+document.getElementById('secondaryColorHex')?.addEventListener('input', (e) => {
+  let hex = e.target.value.trim();
+  if (!hex.startsWith('#')) hex = '#' + hex;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    const picker = document.getElementById('secondaryColorInput');
+    if (picker) picker.value = hex;
+    const prim = document.getElementById('primaryColorInput')?.value || '#c62828';
+    updateColorPreview(prim, hex);
+  }
+});
+
+// Opslaan Button
+document.getElementById('saveTeamColorsBtn')?.addEventListener('click', () => {
+  const prim = document.getElementById('primaryColorInput')?.value || '#c62828';
+  const sec = document.getElementById('secondaryColorInput')?.value || '#8e1b1b';
+
+  state.primaryColor = prim;
+  state.secondaryColor = sec;
+  saveState();
+  applyTeamColors(prim, sec);
+  closeTeamColorsModal();
+  showToast('Teamkleuren succesvol opgeslagen!', 'success', 'Kleuren bijgewerkt');
+});
+
+// Reset naar standaard rood
+document.getElementById('resetTeamColorsBtn')?.addEventListener('click', () => {
+  const p = '#c62828';
+  const s = '#8e1b1b';
+  const primInput = document.getElementById('primaryColorInput');
+  const primHex = document.getElementById('primaryColorHex');
+  const secInput = document.getElementById('secondaryColorInput');
+  const secHex = document.getElementById('secondaryColorHex');
+
+  if (primInput) primInput.value = p;
+  if (primHex) primHex.value = p;
+  if (secInput) secInput.value = s;
+  if (secHex) secHex.value = s;
+
+  updateColorPreview(p, s);
+});

@@ -634,9 +634,20 @@ WhatsApp
                   fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
               </svg>
             </span>
-          </span>
-        </label>
       </div>
+    </div>
+    <div class="settings-section" id="coachTeamColorsSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div class="settings-label">Teamkleuren</div>
+          <div class="settings-help">Pas de club- en accentkleuren aan.</div>
+        </div>
+        <button type="button" class="btn" id="openTeamColorsBtn" style="padding:7px 12px;font-size:12px;font-weight:700;border-radius:10px;white-space:nowrap;display:flex;align-items:center;gap:6px">
+          <span id="teamColorsPreviewDot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--red);border:1px solid rgba(0,0,0,0.15)"></span>
+          Pas teamkleuren aan
+        </button>
+      </div>
+    </div>
     <div class="settings-section" id="playerTeamCodeSection" hidden>
       <div class="settings-label">Mijn Team</div>
       <div class="settings-linked-player" id="settingsLinkedPlayer" style="font-weight:700;font-size:15px;color:#1e293b">—</div>
@@ -692,6 +703,101 @@ WhatsApp
     <button type="button" class="btn primary" id="lastMinuteUnderstoodBtn" style="width:100%;border-radius:12px;padding:12px;font-weight:700">
       Begrepen, doe ik! 👍
     </button>
+  </div>
+</div>
+
+<!-- ─── Modal: Teamkleuren Aanpassen ─── -->
+<div class="invite-modal-backdrop" id="teamColorsModal">
+  <div class="invite-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:18px;font-weight:800;color:#0f172a">Teamkleuren aanpassen</div>
+      <button type="button" class="settings-close" id="closeTeamColorsModalBtn" style="position:static">×</button>
+    </div>
+
+    <p style="font-size:13px;color:#64748b;margin:0 0 16px;line-height:1.4">
+      Stel de club- en accentkleuren in voor jouw team. Deze kleuren worden toegepast op de navigatie, knoppen, scrollbar en achtergrond-animatie in zowel lichte als donkere modus.
+    </p>
+
+    <!-- Preset Palette Picker -->
+    <label style="font-size:12px;font-weight:800;color:#334155;margin-bottom:8px;display:block">Club templates</label>
+    <div class="team-color-presets" id="teamColorPresets" style="display:grid;grid-template-columns:repeat(5, 1fr);gap:8px;margin-bottom:18px">
+      <button type="button" class="color-preset-btn" data-primary="#c62828" data-secondary="#8e1b1b" title="Rood / Donkerrood" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#c62828;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#8e1b1b;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#1e40af" data-secondary="#1e3a8a" title="Blauw / Marine" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#1e40af;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#1e3a8a;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#15803d" data-secondary="#14532d" title="Groen / Donkergroen" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#15803d;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#14532d;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#ea580c" data-secondary="#9a3412" title="Oranje / Brons" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#ea580c;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#9a3412;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#7c3aed" data-secondary="#4c1d95" title="Paars / Dieppaars" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#7c3aed;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#4c1d95;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#0891b2" data-secondary="#155e75" title="Cyaan / Teal" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#0891b2;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#155e75;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#e11d48" data-secondary="#881337" title="Robijn / Bordeaux" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#e11d48;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#881337;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#0284c7" data-secondary="#0369a1" title="Sky Blue" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#0284c7;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#0369a1;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#d97706" data-secondary="#78350f" title="Goud / Amber" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#d97706;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#78350f;border:1px solid #fff"></span>
+      </button>
+      <button type="button" class="color-preset-btn" data-primary="#334155" data-secondary="#0f172a" title="Zwart / Slate" style="display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;padding:0">
+        <span style="width:14px;height:14px;border-radius:50%;background:#334155;margin-right:-4px;z-index:2;border:1px solid #fff"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:#0f172a;border:1px solid #fff"></span>
+      </button>
+    </div>
+
+    <!-- Custom Pickers -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:#f8fafc;padding:12px;border:1px solid #e2e8f0;border-radius:12px">
+        <label for="primaryColorInput" style="font-size:12px;font-weight:800;color:#1e293b;margin:0 0 4px;display:block">Hoofdkleur</label>
+        <span style="font-size:11px;color:#64748b;display:block;margin-bottom:8px">Knoppen, navigatie, accenten</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="color" id="primaryColorInput" value="#c62828" style="width:40px;height:38px;padding:2px;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer">
+          <input type="text" id="primaryColorHex" value="#c62828" maxlength="7" style="font-family:monospace;font-weight:700;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;width:100%">
+        </div>
+      </div>
+
+      <div style="background:#f8fafc;padding:12px;border:1px solid #e2e8f0;border-radius:12px">
+        <label for="secondaryColorInput" style="font-size:12px;font-weight:800;color:#1e293b;margin:0 0 4px;display:block">Secundaire kleur</label>
+        <span style="font-size:11px;color:#64748b;display:block;margin-bottom:8px">Achtergrond blobs & tinten</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="color" id="secondaryColorInput" value="#8e1b1b" style="width:40px;height:38px;padding:2px;border-radius:8px;border:1px solid #cbd5e1;cursor:pointer">
+          <input type="text" id="secondaryColorHex" value="#8e1b1b" maxlength="7" style="font-family:monospace;font-weight:700;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;width:100%">
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Box -->
+    <div style="background:#f8fafc;padding:12px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Voorbeeld weergave</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn primary" id="colorPreviewPrimaryBtn" style="padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;pointer-events:none">Actieve Knop</button>
+        <button type="button" class="btn" style="padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;pointer-events:none">Standaard</button>
+        <span class="pill" id="colorPreviewPill" style="font-size:11px;font-weight:700">Badge</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button type="button" class="btn ghost" id="resetTeamColorsBtn" style="flex:1;border-radius:12px;font-weight:700">Standaard rood</button>
+      <button type="button" class="btn primary" id="saveTeamColorsBtn" style="flex:2;border-radius:12px;font-weight:700">Kleuren opslaan</button>
+    </div>
   </div>
 </div>
 

@@ -1,5 +1,19 @@
 :root{
-  --red:#c62828;--red-dark:#8e1b1b;--red-soft:#fdecec;--bg:#f6f6f7;--card:#fff;--text:#171717;
+  --primary-color: #c62828;
+  --primary-dark: #8e1b1b;
+  --primary-soft: #fdecec;
+  --secondary-color: #8e1b1b;
+  --blob-1: rgba(158,18,28,.22);
+  --blob-2: rgba(188,38,48,.15);
+  --blob-3: rgba(218,102,108,.07);
+  --blob-sec-1: rgba(142,27,27,.22);
+  --blob-sec-2: rgba(188,38,48,.14);
+  --blob-sec-3: rgba(218,102,108,.06);
+
+  --red:var(--primary-color);
+  --red-dark:var(--primary-dark);
+  --red-soft:var(--primary-soft);
+  --bg:#f6f6f7;--card:#fff;--text:#171717;
   --muted:#6b7280;--border:#e5e7eb;--green:#22c55e;--orange:#f59e0b;--danger:#ef4444;--black:#111827;
 }
 *{box-sizing:border-box}
@@ -3809,9 +3823,9 @@ body.dark-theme{
   --text:#f3f4f6;
   --muted:#9ca3af;
   --border:#2a313d;
-  --red:#ef4444;
-  --red-soft:#2a1719;
-  --red-dark:#fecaca;
+  --red:var(--primary-color, #ef4444);
+  --red-soft:var(--primary-soft-dark, #2a1719);
+  --red-dark:var(--primary-dark-dark, #fecaca);
   background:#0f131a!important;
   color:#f3f4f6!important;
 }
@@ -3938,9 +3952,9 @@ body .coachboard-lava-layer{
   top:5%;
   background:
     radial-gradient(circle at 42% 42%,
-      rgba(158,18,28,.22) 0%,
-      rgba(188,38,48,.15) 32%,
-      rgba(218,102,108,.07) 58%,
+      var(--blob-sec-1, rgba(158,18,28,.22)) 0%,
+      var(--blob-sec-2, rgba(188,38,48,.15)) 32%,
+      var(--blob-sec-3, rgba(218,102,108,.07)) 58%,
       transparent 76%);
   animation:coachboardBlobA 22s ease-in-out infinite alternate;
 }
@@ -3951,9 +3965,9 @@ body .coachboard-lava-layer{
   max-width:640px;
   background:
     radial-gradient(circle at 52% 48%,
-      rgba(174,22,34,.20) 0%,
-      rgba(202,50,60,.14) 34%,
-      rgba(225,115,120,.06) 60%,
+      var(--blob-1, rgba(174,22,34,.20)) 0%,
+      var(--blob-2, rgba(202,50,60,.14)) 34%,
+      var(--blob-3, rgba(225,115,120,.06)) 60%,
       transparent 76%);
   animation:coachboardBlobB 26s ease-in-out infinite alternate;
 }
@@ -3964,9 +3978,9 @@ body .coachboard-lava-layer{
   max-width:675px;
   background:
     radial-gradient(circle at 47% 50%,
-      rgba(145,15,27,.19) 0%,
-      rgba(184,34,45,.13) 36%,
-      rgba(215,95,102,.055) 62%,
+      var(--blob-sec-1, rgba(145,15,27,.19)) 0%,
+      var(--blob-sec-2, rgba(184,34,45,.13)) 36%,
+      var(--blob-sec-3, rgba(215,95,102,.055)) 62%,
       transparent 78%);
   animation:coachboardBlobC 20s ease-in-out infinite alternate;
 }
@@ -4038,26 +4052,32 @@ body .coachboard-lava-layer::after{
   }
   46%{
     transform:translate3d(46vw,-50vh,0) scale(.96) rotate(-5deg);
-    border-radius:41% 59% 52% 48% / 60% 40% 54% 46%;
+    border-radius:41% 59% 52% 48% / 59% 41% 54% 46%;
   }
-  72%{
-    transform:translate3d(10vw,-78vh,0) scale(1.08) rotate(3deg);
-    border-radius:57% 43% 39% 61% / 48% 52% 44% 56%;
+  73%{
+    transform:translate3d(12vw,-44vh,0) scale(1.08) rotate(4deg);
+    border-radius:60% 40% 43% 57% / 44% 56% 40% 60%;
   }
   100%{
-    transform:translate3d(-24vw,-24vh,0) scale(1.02) rotate(-2deg);
-    border-radius:46% 54% 58% 42% / 55% 45% 60% 40%;
+    transform:translate3d(30vw,-18vh,0) scale(1.02) rotate(-2deg);
+    border-radius:46% 54% 58% 42% / 55% 45% 51% 49%;
   }
 }
 
-/* Let the moving background show through without hurting readability */
+/* =========================
+   Glass cards for light mode
+   ========================= */
 body:not(.dark-theme) .app,
 body:not(.dark-theme) .screen{
-  background:transparent!important;
+  background:transparent;
 }
-body:not(.dark-theme) header,
+body:not(.dark-theme) header{
+  background:rgba(246,246,247,.82);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
 body:not(.dark-theme) nav.tabs{
-  background:rgba(255,255,255,.83)!important;
+  background:rgba(246,246,247,.88);
   backdrop-filter:blur(16px);
   -webkit-backdrop-filter:blur(16px);
 }
@@ -4067,12 +4087,13 @@ body:not(.dark-theme) .lineup-half-card,
 body:not(.dark-theme) .lineup-bench-panel,
 body:not(.dark-theme) .match-compact,
 body:not(.dark-theme) .player-row-card{
-  background:rgba(255,255,255,.89)!important;
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
+  background:rgba(255,255,255,.88);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-color:rgba(229,231,235,.9);
 }
 
-/* Dark mode: same motion with restrained deep-red blobs */
+/* Dark mode: same motion with restrained deep blobs */
 html:has(body.dark-theme){
   background:#0f131a;
 }
@@ -4082,13 +4103,13 @@ body.dark-theme .coachboard-lava-blob{
   filter:blur(46px);
 }
 body.dark-theme .coachboard-lava-blob.blob-a{
-  background:radial-gradient(circle,rgba(190,24,45,.46) 0%,rgba(135,12,31,.27) 42%,rgba(85,7,22,.11) 66%,transparent 82%);
+  background:radial-gradient(circle,var(--blob-dark-sec-1, rgba(190,24,45,.46)) 0%,var(--blob-dark-sec-2, rgba(135,12,31,.27)) 42%,var(--blob-dark-sec-3, rgba(85,7,22,.11)) 66%,transparent 82%);
 }
 body.dark-theme .coachboard-lava-blob.blob-b{
-  background:radial-gradient(circle,rgba(175,20,40,.42) 0%,rgba(120,10,28,.25) 44%,rgba(76,6,19,.10) 68%,transparent 82%);
+  background:radial-gradient(circle,var(--blob-dark-1, rgba(175,20,40,.42)) 0%,var(--blob-dark-2, rgba(120,10,28,.25)) 44%,var(--blob-dark-3, rgba(76,6,19,.10)) 68%,transparent 82%);
 }
 body.dark-theme .coachboard-lava-blob.blob-c{
-  background:radial-gradient(circle,rgba(185,22,43,.44) 0%,rgba(128,11,30,.26) 45%,rgba(80,7,21,.10) 69%,transparent 83%);
+  background:radial-gradient(circle,var(--blob-dark-sec-1, rgba(185,22,43,.44)) 0%,var(--blob-dark-sec-2, rgba(128,11,30,.26)) 45%,var(--blob-dark-sec-3, rgba(80,7,21,.10)) 69%,transparent 83%);
 }
 body.dark-theme .coachboard-lava-layer::after{
   background:linear-gradient(180deg,rgba(15,19,26,.08),rgba(15,19,26,.02));
@@ -5244,5 +5265,19 @@ body.dark-theme .tabs::-webkit-scrollbar-thumb{
 .auth-email-form {
   display: flex;
   flex-direction: column;
+}
+
+.color-preset-btn {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.color-preset-btn:hover {
+  transform: translateY(-2px);
+  border-color: #94a3b8!important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.color-preset-btn.active {
+  border-color: var(--primary-color, #c62828)!important;
+  box-shadow: 0 0 0 2px var(--primary-soft, #fdecec), 0 4px 10px rgba(0,0,0,0.12);
+  transform: scale(1.04);
 }
 
