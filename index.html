@@ -129,49 +129,6 @@
       <button type="button" class="auth-secondary" id="inviteBackToChoiceBtn" style="margin-top:8px;">← Terug naar keuzemenu</button>
     </form>
   </div>
-
-  <div class="auth-card" id="roleStep" hidden>
-    <div class="auth-step-kicker">Stap 2</div>
-    <h1>Kies je rol</h1>
-    <p class="auth-copy">Dit bepaalt welke functies je in CoachBoard ziet.</p>
-    <div class="role-grid">
-      <button class="role-choice" data-role-choice="coach">
-        <span class="role-icon">📋</span><strong>Coach</strong><small>Beheer spelers, wedstrijden en opstellingen.</small>
-      </button>
-      <button class="role-choice" data-role-choice="player">
-        <span class="role-icon">⚽</span><strong>Speler</strong><small>Koppel met teamcode of uitnodiging.</small>
-      </button>
-    </div>
-    <button class="auth-secondary" id="authBackToLogin">← Terug</button>
-  </div>
-
-  <div class="auth-card" id="playerCodeStep" hidden>
-    <div class="auth-step-kicker">Speler koppelen</div>
-    <h1>Koppel aan je team</h1>
-    <p class="auth-copy">Voer de teamcode van je coach in of vraag je coach om een persoonlijke uitnodigingslink.</p>
-
-    <label class="auth-label" for="playerTeamCode">Teamcode</label>
-    <input class="auth-input auth-code-input" id="playerTeamCode" maxlength="8" placeholder="KGB45" autocomplete="off">
-
-    <div id="playerIdentityBlock" hidden>
-      <div class="auth-teamcode-valid">
-        <span class="auth-teamcode-check">✓</span>
-        <span>Team gevonden</span>
-      </div>
-
-      <label class="auth-label" for="playerIdentitySelect">Wie ben jij?</label>
-      <select class="auth-input" id="playerIdentitySelect">
-        <option value="">Selecteer je naam</option>
-      </select>
-    </div>
-
-    <div id="playerTeamCodeHint" class="auth-teamcode-hint">
-      Vul de teamcode in van je coach.
-    </div>
-
-    <button class="auth-primary" id="joinTeamBtn" disabled>Team koppelen</button>
-    <button class="auth-secondary" id="playerCodeBack">← Andere rol kiezen</button>
-  </div>
 </div>
 
 <div class="app">
@@ -681,8 +638,6 @@ WhatsApp
           </span>
         </label>
       </div>
-    </div>
-    <div class="settings-section" id="coachTeamCodeSection" hidden><div class="settings-label">Teamcode</div><div class="settings-help">Deel deze code met spelers.</div><div class="team-code-card"><code id="coachTeamCode">—</code><button class="team-code-copy" id="copyTeamCodeBtn">Kopieer</button></div></div>
     <div class="settings-section" id="playerTeamCodeSection" hidden>
       <div class="settings-label">Mijn Team</div>
       <div class="settings-linked-player" id="settingsLinkedPlayer" style="font-weight:700;font-size:15px;color:#1e293b">—</div>

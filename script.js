@@ -4732,7 +4732,6 @@ function settingsUpdate(){
 
   document.getElementById('settingsEmail').textContent=a.email||'—';
   document.getElementById('settingsRoleText').textContent=a.role==='coach'?'Coach':'Speler';
-  document.getElementById('coachTeamCodeSection').hidden=a.role!=='coach';
   document.getElementById('playerTeamCodeSection').hidden=a.role!=='player';
 
   const teamCode=ensureTeamCode();
@@ -4743,7 +4742,6 @@ function settingsUpdate(){
   if(a.role==='coach'){
     a.teamCode=teamCode;
     authSave(a);
-    document.getElementById('coachTeamCode').textContent=teamCode;
   }else{
     const player=state.players.find(p=>p.id===a.playerId);
     const linked=document.getElementById('settingsLinkedPlayer');
@@ -4911,7 +4909,6 @@ document.getElementById('settingsModal')?.addEventListener('click',(e)=>{
 document.addEventListener('keydown',(e)=>{
   if(e.key==='Escape')document.getElementById('settingsModal')?.classList.remove('show');
 });
-document.getElementById('copyTeamCodeBtn')?.addEventListener('click',async()=>{const code=ensureTeamCode();try{await navigator.clipboard.writeText(code)}catch(e){alert('Teamcode: '+code)}});
 document.getElementById('logoutBtn')?.addEventListener('click',async()=>{
   if(typeof window.handleFirebaseLogout==='function'){try{await window.handleFirebaseLogout()}catch(e){}}
   localStorage.removeItem(AUTH_KEY);
