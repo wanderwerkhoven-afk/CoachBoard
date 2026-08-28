@@ -4751,16 +4751,6 @@ function settingsUpdate(){
     const nameInput=document.getElementById('settingsPlayerName');
     if(nameInput)nameInput.value=player?.name||'';
   }
-
-  const accessSection=document.getElementById('settingsAccessSection');
-  if(accessSection)accessSection.hidden=a.role==='player';
-
-  const list=document.getElementById('settingsAccessList');
-  if(list){
-    list.innerHTML=(ACCESS_MATRIX[a.role]||[])
-      .map(x=>`<div class="settings-access-item">${x}</div>`)
-      .join('');
-  }
 }
 document.getElementById('authLoginBtn')?.addEventListener('click',()=>{const email=document.getElementById('authEmail').value.trim(),pw=document.getElementById('authPassword').value;if(!email||!pw){alert('Vul e-mailadres en wachtwoord in.');return}authSave({loggedIn:true,email,role:null,teamCode:null});authStep('roleStep')});
 document.getElementById('authBackToLogin')?.addEventListener('click',()=>{localStorage.removeItem(AUTH_KEY);authStep('loginStep')});
