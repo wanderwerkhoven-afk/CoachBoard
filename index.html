@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#c62828">
 <title>CoachBoard</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body><div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
@@ -803,5 +806,12 @@ WhatsApp
 
 <script src="script.js"></script>
 <script type="module" src="auth.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Offline installatie mislukt:', error));
+  });
+}
+</script>
 </body>
 </html>
