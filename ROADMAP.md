@@ -217,3 +217,9 @@ De volgende items zijn aangetroffen in de code. **Aanwezig** betekent niet autom
 
 ## H. Compleetheidsgrens
 Deze roadmap beschrijft de **huidige codebasis en het voorgestelde werk** zo uitgebreid mogelijk, maar kan toekomstige productwensen niet voorspellen. Nog open productbesluiten staan in hoofdstuk 9. De automatische bronindex in [VARIABLES.md](VARIABLES.md) is een snapshot; pas planning en documentatie aan na elke architectuurwijziging.
+
+
+## Wijzigingslog — 10 november 2026
+- Spelersoverzicht statistiek: sorteerkeuze toegevoegd voor standaardvolgorde, meeste speelminuten eerst en minste speelminuten eerst.
+- De bestaande berekening van gespeelde minuten blijft leidend; gelijke minuten worden alfabetisch gesorteerd. De sorteerkeuze blijft tijdens dezelfde paginasessie actief.
+- Handmatige verificatie op mobiel en desktop blijft onderdeel van de releasechecklist.
