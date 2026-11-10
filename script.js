@@ -3580,6 +3580,17 @@ async function downloadSeasonBookPdf(){
   }
 }
 
+let currentStatsMinutesSort='default';
+
+function sortPlayerStatsByMinutes(rows, direction){
+  if(direction!=='asc' && direction!=='desc')return rows;
+  const sign=direction==='asc'?1:-1;
+  return [...rows].sort((a,b)=>
+    sign*(a.minutes-b.minutes) ||
+    String(a.p.name||'').localeCompare(String(b.p.name||''),'nl')
+  );
+}
+
 function renderStats(){
   const rec=getSeasonRecord();
   document.getElementById('statsMatches').textContent=`${rec.played}/${rec.total}`;
@@ -3620,9 +3631,15 @@ function renderStats(){
     return {p,minutes,present,registered,attendancePct};
   });
 
-  const visibleRows=isPlayerRole()
-    ? rows.filter(r=>r.p.id===currentPlayerId())
-    : rows;
+  const visibleRows=sortPlayerStatsByMinutes(
+    isPlayerRole() ? rows.filter(r=>r.p.id===currentPlayerId()) : rows,
+    currentStatsMinutesSort
+  );
+  const sortSelect=document.getElementById('statsMinutesSort');
+  if(sortSelect){
+    sortSelect.value=currentStatsMinutesSort;
+    sortSelect.disabled=isPlayerRole();
+  }
 
   const maxMinutes=Math.max(70,...visibleRows.map(r=>r.minutes));
   const playerStatsList=document.getElementById('statsPlayerList');
@@ -3675,6 +3692,14 @@ function renderStats(){
         </div>
       `).join('')}
     </div>`;
+
+  if(sortSelect && !sortSelect.dataset.bound){
+    sortSelect.addEventListener('change',()=>{
+      currentStatsMinutesSort=sortSelect.value;
+      renderStats();
+    });
+    sortSelect.dataset.bound='true';
+  }
 
   playerStatsList.querySelectorAll('[data-player-stats]').forEach(btn=>{
     btn.addEventListener('click',()=>showPlayerStats(btn.dataset.playerStats));
