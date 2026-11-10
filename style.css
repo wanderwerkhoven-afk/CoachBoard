@@ -5322,3 +5322,10 @@ body.dark-theme .tabs::-webkit-scrollbar-thumb{
   transform: scale(1.04);
 }
 
+
+/* Spelersstatistiek: sorteren op gespeelde minuten */
+.stats-players-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.stats-minutes-sort-label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.stats-minutes-sort{max-width:220px;min-height:36px;padding:6px 10px;border:1px solid var(--border,#d6dbe1);border-radius:9px;background:var(--surface,#fff);color:inherit;font:inherit}
+.stats-minutes-sort:focus-visible{outline:2px solid var(--primary,#c62828);outline-offset:2px}
+@media(max-width:520px){.stats-minutes-sort-label{width:100%;justify-content:space-between}.stats-minutes-sort{max-width:65%;min-width:0}}
