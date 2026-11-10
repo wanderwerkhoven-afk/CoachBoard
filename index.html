@@ -323,7 +323,16 @@
     </div>
   </div>
   <div class="stats-section-card">
-    <div class="section-title" style="margin-top:0">2. Spelersoverzicht</div>
+    <div class="stats-players-toolbar">
+      <div class="section-title" style="margin-top:0">2. Spelersoverzicht</div>
+      <label class="stats-minutes-sort-label" for="statsMinutesSort">Sorteer op speeltijd
+        <select id="statsMinutesSort" class="stats-minutes-sort">
+          <option value="default">Standaard</option>
+          <option value="desc">Meeste minuten eerst</option>
+          <option value="asc">Minste minuten eerst</option>
+        </select>
+      </label>
+    </div>
     <div class="muted" style="margin-bottom:6px">Klik op een speler voor de individuele spelersstatistiek.</div>
     <div id="statsPlayerList"></div>
   </div>
