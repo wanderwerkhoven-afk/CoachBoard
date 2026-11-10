@@ -1758,3 +1758,14 @@ Totaal: **210** ID-attributen, **210** unieke namen.
 | `manifest.json` | Alternatief aanwezig manifest | Manifest |
 
 **Updateprocedure:** controleer na iedere refactor opnieuw `script.js`, `auth.js`, `style.css`, `index.html`, `firestore.rules` en `sw.js`.
+
+
+## Aanvulling — sortering spelersstatistiek (10 november 2026)
+| Symbool/element | Bestand | Betekenis |
+|---|---|---|
+| `currentStatsMinutesSort` | `script.js` | Huidige sorteerrichting: `default`, `desc`, `asc` (alleen huidige paginasessie) |
+| `sortPlayerStatsByMinutes(rows, direction)` | `script.js` | Sorteert op berekende minuten, met naam als stabiele tie-breaker; laat input ongemoeid |
+| `#statsMinutesSort` | `index.html` | Selectie voor sorteren op speelminuten in het spelersoverzicht |
+| `.stats-players-toolbar`, `.stats-minutes-sort-label`, `.stats-minutes-sort` | `style.css` | Layout en responsieve styling van sorteerselectie |
+
+De bovenstaande aanvullingen zijn na de oorspronkelijke automatisch gegenereerde bronindex toegevoegd. Herbouw die index bij een volgende volledige inventarisatie; regelnummers verschuiven door deze wijziging.
