@@ -128,3 +128,92 @@ Deze punten zijn ideeën, geen bevestigde bestaande features.
 5. Daarna gericht refactoren zonder zichtbare gedragswijzigingen.
 
 Zie `VARIABLES.md` voor de variabelen, functies, opslaglocaties en onderhoudsafspraken.
+
+
+---
+
+# Uitgebreide uitvoerings- en validatiematrix
+
+## A. Functionaliteitsmatrix van de huidige broncode
+De volgende items zijn aangetroffen in de code. **Aanwezig** betekent niet automatisch functioneel getest.
+
+| Domein | Gevonden implementatie | Belangrijkste validatie | Prioriteit |
+|---|---|---|---|
+| Accounts | Google-login, e-mail-login, registratie, uitloggen | Alle login-/foutpaden, sessieherstel, rolkoppeling | P0 |
+| Uitnodigingen | Uitnodigingslinks, tokenopzoeking, accountkoppeling | Ongeautoriseerde claims, verlopen/hergebruikte tokens | P0 |
+| Teams | Teamcode, teamopzoeking, realtime teamupdates | Lidmaatschap, teamisolatie, foutieve teamcodes | P0 |
+| Cloud | Firestore, listeners, lokale/cloudsync | Race conditions, conflict, offline, reconnect | P0 |
+| Spelers | Aanmaken/bewerken/verwijderen, niveau, posities | Validatie, duplicate, verwijdergevolgen | P1 |
+| Beschikbaarheid | Status, afwezigheidsdatums, last-minute notificaties | Datumgrenzen, statusprioriteit, notificatie-rechten | P1 |
+| Wedstrijden | Toevoegen, bewerken, filteren, afronden, herstellen | Compleetheid, historische data, statusovergangen | P1 |
+| Opstellingen | Formaties, twee helften, optimalisatie, wissels | Constraints, eerlijkheid, touch/drag, undo | P1 |
+| Statistieken | Speeltijd, doelpunten, seizoenshistorie | Reproduceerbaarheid, totalen, herstel | P1 |
+| Delen/export | Speler-PDF, seizoensboek-PDF, afbeeldingen, WhatsApp | Browsercompatibiliteit, privacy, bestandsgrootte | P1 |
+| UI | Vier hoofdschermen, filters, modals, thema, teamkleuren | Responsiviteit, toegankelijkheid, foutstaten | P1 |
+| PWA | Manifest, service worker, cache | Installatie, offline, cache-invalidering | P1 |
+
+## B. Testmatrix voor rollen en toegangsrechten
+| Actor | Eigen profiel | Team lezen | Spelers wijzigen | Wedstrijd wijzigen | Uitnodiging claimen |
+|---|---|---|---|---|---|
+| Niet ingelogd | Nee | Te blokkeren tenzij expliciet publiek | Nee | Nee | Alleen publieke metadata, claim na login |
+| Speler van team | Ja | Alleen toegestane teamdata | Alleen eigen toegestane velden | Nee, tenzij productbesluit | Eigen geldige uitnodiging |
+| Coach van team | Ja | Eigen team | Eigen team | Eigen team | Volgens uitnodigingsflow |
+| Coach van ander team | Ja | Nee | Nee | Nee | Alleen expliciet uitgenodigd |
+| Beheerder | Volgens expliciet beheermodel | Alleen geautoriseerd | Alleen geautoriseerd | Alleen geautoriseerd | Volgens beleid |
+
+**Let op:** dit is het **gewenste** autorisatiemodel dat nog moet worden geïmplementeerd/getest, geen beschrijving van de huidige permissies.
+
+## C. Testscenario's die minimaal geautomatiseerd moeten worden
+1. Nieuw account, bestaand account, onjuist wachtwoord, logout, refresh en verlopen sessie.
+2. Uitnodiging geldig/ongeldig/verlopen/al geclaimd; speler koppelt aan juiste team.
+3. Niet-ingelogde gebruiker en vreemde ingelogde gebruiker proberen team en spelers te lezen/schrijven.
+4. Coach maakt speler aan, wijzigt posities en niveau, verwijdert speler; alle referenties blijven consistent.
+5. Beschikbaarheid per status, afwezigheid op wedstrijddatum en last-minute wijziging.
+6. Wedstrijd aanmaken, wijzigen, voorbereiden, afronden en terugzetten.
+7. Opstelling genereren met onvoldoende spelers, ontbrekende posities, gemengde niveaus en verschillende formaties.
+8. Wissels op touch en muis; na herladen dezelfde opstelling.
+9. Doelpunten en minuten per wedstrijd tellen correct op in seizoenstatistiek.
+10. Export naar PDF en afbeelding werkt of geeft een begrijpelijke fout.
+11. Twee clients wijzigen gegevens; conflicten leiden niet tot stil dataverlies.
+12. Offline openen, online terugkeren, cache-update en herstel na mislukte sync.
+
+## D. Data- en migratiebeleid
+- Maak vóór datamodelwijzigingen een export/back-up van testdata en, na expliciete goedkeuring, eventuele productiegegevens.
+- Leg schema-versies vast; migreer oude records idempotent.
+- Gebruik stabiele identifiers, geen weergavenamen als primaire sleutel.
+- Maak onderscheid tussen account, teamlidmaatschap, spelersprofiel en wedstrijddeelname.
+- Laat autorisatie niet afhangen van uitsluitend door de client aangeleverde rollen of teamcodes.
+- Leg het gedrag vast bij verwijderen van speler, team en wedstrijd (referentiële integriteit).
+
+## E. Niet-functionele acceptatiecriteria
+| Categorie | Releasecriterium |
+|---|---|
+| Security | Geen ongeautoriseerde toegang tot teams, spelers, uitnodigingen of gebruikersprofielen in emulator-tests |
+| Data-integriteit | Geen stil verlies van opgeslagen wijzigingen bij refresh, netwerkuitval of gelijktijdig bewerken |
+| Betrouwbaarheid | Kritieke coachflows doorlopen met herhaalbare testdata |
+| UX | Alle kernacties bruikbaar op telefoon zonder horizontale paginascroll |
+| Toegankelijkheid | Semantische bediening, labels, focusvolgorde, contrast en toetsenbordpad gecontroleerd |
+| PWA | Installatie, offline gedrag en updateflow gedocumenteerd en getest |
+| Documentatie | Schema, configuratie, deployment, herstel en variabelenregister actueel |
+| Release | Testresultaten en bekende beperkingen bij iedere release vastgelegd |
+
+## F. Architectuurverbeteringen — volgorde
+1. **Tests vóór refactor:** maak een baseline van bestaand gedrag.
+2. **Data- en permissielaag:** maak expliciete modules voor Auth, Firestore, opslag en migratie.
+3. **Domeinlogica:** scheid spelers, wedstrijden, beschikbaarheid, opstellingsalgoritme en statistiek.
+4. **UI-laag:** scheid renderfuncties en eventbindingen van domeinlogica.
+5. **Designsysteem:** centraliseer CSS-custom-properties, componenten en responsive regels.
+6. **Build/release:** voeg linting, tests en CI toe zonder bestaande PWA-werking te breken.
+
+## G. Sprintdeliverables en bewijs
+| Sprint | Concrete oplevering | Bewijs |
+|---|---|---|
+| 1 | Securityregels, basistests, risico-overzicht | Emulator-resultaten en commitlinks |
+| 2 | Dataschema, migratieplan, sync-foutafhandeling | Twee-client/offline tests |
+| 3 | Stabiele spelers- en beschikbaarheidsflows | UI- en roltests |
+| 4 | Stabiele wedstrijd- en opstellingsflows | Scenario- en algoritmetests |
+| 5 | Statistieken, exports, toegankelijke UI | Controleberekeningen en device-tests |
+| 6 | PWA-release, documentatie, rollback | Releasechecklist en acceptatieverslag |
+
+## H. Compleetheidsgrens
+Deze roadmap beschrijft de **huidige codebasis en het voorgestelde werk** zo uitgebreid mogelijk, maar kan toekomstige productwensen niet voorspellen. Nog open productbesluiten staan in hoofdstuk 9. De automatische bronindex in [VARIABLES.md](VARIABLES.md) is een snapshot; pas planning en documentatie aan na elke architectuurwijziging.
