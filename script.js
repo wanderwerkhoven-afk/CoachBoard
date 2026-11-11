@@ -3639,6 +3639,13 @@ function renderStats(){
   if(sortSelect){
     sortSelect.value=currentStatsMinutesSort;
     sortSelect.disabled=isPlayerRole();
+    if(!sortSelect.dataset.bound){
+      sortSelect.addEventListener('change',()=>{
+        currentStatsMinutesSort=sortSelect.value;
+        renderStats();
+      });
+      sortSelect.dataset.bound='true';
+    }
   }
 
   const maxMinutes=Math.max(70,...visibleRows.map(r=>r.minutes));
@@ -3692,14 +3699,6 @@ function renderStats(){
         </div>
       `).join('')}
     </div>`;
-
-  if(sortSelect && !sortSelect.dataset.bound){
-    sortSelect.addEventListener('change',()=>{
-      currentStatsMinutesSort=sortSelect.value;
-      renderStats();
-    });
-    sortSelect.dataset.bound='true';
-  }
 
   playerStatsList.querySelectorAll('[data-player-stats]').forEach(btn=>{
     btn.addEventListener('click',()=>showPlayerStats(btn.dataset.playerStats));
