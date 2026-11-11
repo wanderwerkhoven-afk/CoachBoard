@@ -1769,3 +1769,5 @@ Totaal: **210** ID-attributen, **210** unieke namen.
 | `.stats-players-toolbar`, `.stats-minutes-sort-label`, `.stats-minutes-sort` | `style.css` | Layout en responsieve styling van sorteerselectie |
 
 De bovenstaande aanvullingen zijn na de oorspronkelijke automatisch gegenereerde bronindex toegevoegd. Herbouw die index bij een volgende volledige inventarisatie; regelnummers verschuiven door deze wijziging.
+
+- **11 november 2026:** `sw.js` gebruikt nu `CACHE = 'coachboard-shell-v2'` en netwerk-eerst voor eigen assets met offline cachefallback. `#statsMinutesSort` wordt tijdens `renderStats()` gebonden vóór de controle op lege spelerslijsten.
