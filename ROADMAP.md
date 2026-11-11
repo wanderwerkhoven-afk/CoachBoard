@@ -223,3 +223,5 @@ Deze roadmap beschrijft de **huidige codebasis en het voorgestelde werk** zo uit
 - Spelersoverzicht statistiek: sorteerkeuze toegevoegd voor standaardvolgorde, meeste speelminuten eerst en minste speelminuten eerst.
 - De bestaande berekening van gespeelde minuten blijft leidend; gelijke minuten worden alfabetisch gesorteerd. De sorteerkeuze blijft tijdens dezelfde paginasessie actief.
 - Handmatige verificatie op mobiel en desktop blijft onderdeel van de releasechecklist.
+
+- **11 november 2026 — bugfix:** PWA-cache bijgewerkt naar `coachboard-shell-v2` en eigen app-assets krijgen bij netwerkverbinding voorrang boven oude cache. Sortering bindt de wijzigingslistener ook als de spelerslijst leeg is. Test na deploy de drie sorteeropties en offline fallback.
