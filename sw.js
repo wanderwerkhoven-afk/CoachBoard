@@ -1,4 +1,4 @@
-const CACHE = 'coachboard-shell-v1';
+const CACHE = 'coachboard-shell-v2';
 const SHELL = ['./', './index.html', './style.css', './script.js', './auth.js', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
@@ -20,10 +20,16 @@ self.addEventListener('fetch', event => {
       }).catch(() => caches.match('./index.html')));
       return;
     }
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(request, copy)); }
+    // Always refresh app assets when online; fall back to the cached shell offline.
+    // This prevents old JavaScript from running alongside a newly deployed HTML page.
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put(request, copy)));
+      }
       return response;
-    })));
+    }).catch(() => caches.match(request)));
+
     return;
   }
   // Cache only Firebase's versioned public JS modules; never cache API responses or private data.
